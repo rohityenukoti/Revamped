@@ -1295,13 +1295,15 @@
             box-sizing: border-box;
             max-width: 100%;
             margin: 20px 0;
+            text-align: left;
+            font-size: 1.2em;
         }
         
         .top-candidate-info .info-box-title {
             font-weight: bold;
             color: #000;
             margin-bottom: 10px;
-            font-size: 1.1em;
+            font-size: 1.3em;
             text-transform: uppercase;
             text-align: center;
         }
@@ -1322,10 +1324,21 @@
             padding-bottom: 0;
         }
         
+        .top-candidate-info .candidate-info-item strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #000;
+            font-size: 1.2em;
+        }
+        
         /* Mobile responsiveness for top candidate info */
         @media (max-width: 768px) {
             .top-candidate-info .candidate-info-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .top-candidate-info {
+                font-size: 1.1em;
             }
         }
 
@@ -1437,28 +1450,29 @@
 
         .content-lightbox-inner {
             background-color: white;
-            width: 80%;
-            max-width: 700px;
-            max-height: 80%;
+            width: 85%;
+            max-width: 800px;
+            max-height: 85%;
             border-radius: 0px;
-            padding: 20px;
+            padding: 25px;
             position: relative;
             overflow-y: auto;
             border: 3px solid #000;
             box-shadow: 10px 10px 0px #000;
+            font-size: 1.2em;
         }
 
         .content-lightbox-close {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 15px;
+            right: 15px;
             background: none;
             border: 3px solid #000;
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
             color: #000;
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1475,6 +1489,58 @@
         .content-lightbox-close:active {
             transform: translate(1px, 1px);
             box-shadow: 2px 2px 0px #000;
+        }
+        
+        /* Add styles for the content inside the lightboxes */
+        .content-lightbox-inner .info-box-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #000;
+            text-transform: uppercase;
+        }
+        
+        .content-lightbox-inner .candidate-info-grid {
+            display: grid;
+            gap: 20px;
+            padding: 10px 0;
+        }
+        
+        .content-lightbox-inner .candidate-info-item {
+            border-bottom: 1px solid #000;
+            padding-bottom: 20px;
+        }
+        
+        .content-lightbox-inner .candidate-info-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .content-lightbox-inner .candidate-info-item strong {
+            display: block;
+            margin-bottom: 12px;
+            color: #000;
+            font-size: 1.2em;
+        }
+        
+        /* Responsive styles for the lightboxes */
+        @media (max-width: 768px) {
+            .content-lightbox-inner {
+                width: 90%;
+                padding: 20px;
+                font-size: 1.1em;
+            }
+            
+            .content-lightbox-inner .info-box-title {
+                font-size: 1.3em;
+                margin-bottom: 15px;
+            }
+            
+            .content-lightbox-inner .candidate-info-item strong {
+                font-size: 1.1em;
+                margin-bottom: 10px;
+            }
         }
 
         /* Add styles for mobile menu and sidebar */
