@@ -2879,6 +2879,18 @@
             if (floatingBackBtn) {
                 floatingBackBtn.style.display = 'none';
             }
+            
+            // Simple fix to restore findings box visibility when switching to review mode
+            const findingsBox = document.querySelector('#doctors-instructions .info-box:nth-child(2)');
+            if (findingsBox) {
+                findingsBox.style.display = 'block';
+            }
+            
+            // Also ensure the findings image and text are visible
+            const findingsImage = document.getElementById('findingsImage');
+            const findingsText = document.getElementById('findingsText');
+            if (findingsImage) findingsImage.style.display = '';
+            if (findingsText) findingsText.style.display = 'block';
         } else {
             modeToggleBtn.classList.remove('active');
             modeToggleBtn.textContent = 'Switch to Review Mode';
