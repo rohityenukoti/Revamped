@@ -812,12 +812,22 @@ async function loadCaseData(caseName) {
         if (results.items.length > 0) {
             const caseData = results.items[0];
             if (allowedTopics.includes(caseData.topic)) {
+                // Convert Wix media URL to regular HTTPS URL if it exists
+                let findingsImageUrl = caseData.findingsImage;
+                if (findingsImageUrl) {
+                    // Using the same approach as in caseEditorHTML.html
+                    findingsImageUrl = findingsImageUrl
+                        .replace('wix:image://v1/', 'https://static.wixstatic.com/media/')
+                        .split('#')[0]  // Remove everything after #
+                        .split('/').slice(0, -1).join('/'); // Remove the last path segment
+                }
+
                 // Send all case data to the HTML component
                 $workbenchComponent.postMessage({
                     type: 'updateCaseData',
                     data: {
                         candidateInfo: caseData.candidateInfo?.candidateInfo?.[0] || {},
-                        findingsImage: caseData.findingsImage,
+                        findingsImage: findingsImageUrl,
                         findingsText: caseData.findingsText,
                         patientInfo: caseData.patientInfo,
                         keyPoints: caseData.keyPoints,
