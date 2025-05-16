@@ -1,5 +1,6 @@
 import wixData from 'wix-data';
 import wixLocation from 'wix-location';
+import wixLocationFrontend from 'wix-location-frontend';
 import wixWindow from 'wix-window';
 
 // HTML component reference
@@ -289,6 +290,14 @@ function setupEventListeners() {
                 
             case 'error':
                 showError(event.data.message);
+                break;
+                
+            case 'navigate':
+                // Handle navigation requests from the HTML component
+                if (event.data.data && event.data.data.url) {
+                    // Navigate to the specified URL
+                    wixLocationFrontend.to(event.data.data.url);
+                }
                 break;
                 
             default:
