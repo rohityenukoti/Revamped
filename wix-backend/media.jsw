@@ -1,0 +1,10 @@
+import { mediaManager } from 'wix-media-backend';
+
+export async function uploadFile(file) {
+    try {
+        const result = await mediaManager.upload(file);
+        return result;
+    } catch (error) {
+        throw new Error('Failed to upload file: ' + error.message);
+    }
+} 

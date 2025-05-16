@@ -1,0 +1,4010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Combined Frontend App</title>
+
+  <style>
+    /* Base styles */
+    body {
+        font-family: 'Space Grotesk', 'Roboto', sans-serif;
+        background-color: #ffe8d6;
+        margin: 0;
+        padding: 2em;
+        word-break: break-word;
+    }
+
+    /* Typography */
+    h1, h2, h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        text-transform: uppercase;
+        color: #000;
+        border-bottom: 4px solid #000;
+        padding-bottom: 0.5em;
+    }
+
+    /* Button styles */
+    button {
+        background-color: #ff4d4d;
+        border: 4px solid #000;
+        box-shadow: 4px 4px 0 #000;
+        color: #000;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1em;
+        font-weight: bold;
+        margin: 10px 0 1em 0;
+        padding: 0.8em 1.2em;
+        text-transform: uppercase;
+        transition: transform 0.1s, box-shadow 0.1s;
+        cursor: pointer;
+    }
+
+    button:active {
+        transform: translate(4px, 4px);
+        box-shadow: 0 0 0 #000;
+    }
+
+    button:hover {
+        background-color: #ff6666;
+    }
+
+    button[disabled] {
+        background-color: #ccc;
+        color: #666;
+        cursor: not-allowed;
+    }
+
+    /* Video container */
+    video {
+        background: #000;
+        border: 4px solid #000;
+        box-shadow: 8px 8px 0 #000;
+        margin-bottom: 20px;
+        width: 100%;
+        height: calc(100% * 0.75);
+    }
+
+    /* Timer Widget */
+    #timerContainer {
+        background-color: #fff;
+        border: 4px solid #000;
+        box-shadow: 8px 8px 0 #000;
+        padding: 8px 30px 8px 15px;
+        font-size: 14px;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+        margin: 0;
+        position: relative;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 200px; /* Add minimum width */
+        white-space: nowrap; /* Prevent text wrapping */
+    }
+
+    #toggleIcon {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+        cursor: pointer;
+    }
+
+    #timerContainer:hover #toggleIcon {
+        opacity: 1;
+    }
+
+    #timerWidget.minimized #toggleIcon .eye-slash {
+        display: none;
+    }
+
+    #timerWidget:not(.minimized) #toggleIcon .eye {
+        display: none;
+    }
+
+    /* Case Information and Results Sections */
+    #caseInformation, #evaluationResults, #timestampContainer {
+        background: #fff;
+        border: 4px solid #000;
+        box-shadow: 8px 8px 0 #000;
+        padding: 1em;  /* Reduced inner padding */
+        margin: 1em 0;  /* Reduced margin */
+    }
+
+    /* Tree View */
+    .tree-view {
+        background: #fff;
+        border: 4px solid #000;
+        box-shadow: 8px 8px 0 #000;
+        padding: 1em;
+        max-height: 60vh; /* Set a maximum height for the content */
+        overflow-y: auto; /* Enable vertical scrolling */
+    }
+
+    .tree-item-header {
+        background-color: #ff4d4d;
+        border: 3px solid #000;
+        padding: 10px;
+        margin: 5px 0;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .tree-item-header:hover {
+        background-color: #ff6666;
+    }
+
+    .case-item {
+        background-color: #fff;
+        border: 3px solid #000;
+        padding: 10px;
+        margin: 5px 0;
+        cursor: pointer;
+    }
+
+    .case-item:hover {
+        background-color: #ffe8d6;
+    }
+
+    /* Modal */
+    #treeViewContainer {
+        display: none; /* Hide by default */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        max-width: 500px;
+        background: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+    }
+
+    /* Loading animation */
+    .loader {
+        border: 5px solid #000;
+        border-radius: 0;
+        border-top: 5px solid #ff4d4d;
+        width: 50px;
+        height: 50px;
+    }
+
+    /* Chat history */
+    #userMessageBox {
+        background: #fff;
+        border: 4px solid #000;
+        box-shadow: 4px 4px 0 #000;
+        padding: 1em;
+    }
+
+    /* Highlighted states */
+    .tree-item-header.highlighted,
+    .case-item.highlighted {
+        border: 4px solid #ff4d4d;
+        background-color: #ffe8d6;
+    }
+
+    /* Timer buttons */
+    .timer-button {
+        background-color: transparent;
+        border: 3px solid #000;
+        box-shadow: 2px 2px 0 #000;
+        margin: 0 5px;
+    }
+
+    .timer-button:hover {
+        background-color: #ffe8d6;
+    }
+
+    /* Time display */
+    #time {
+        font-size: 16px;
+        font-weight: bold;
+        font-family: 'Space Mono', monospace;
+    }
+
+    /* LiveChatAvatar styles */
+    .hidden { display: none; }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(216, 74, 56, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(216, 74, 56, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(216, 74, 56, 0); }
+    }
+    .pulse-button { animation: pulse 2s infinite; }
+    .pulse-button[disabled] { animation: none; }
+
+    /* Timer styles */
+    #timerText {
+      margin: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    #readingTimeLabel {
+      font-size: 10px;
+      color: #666;
+    }
+    #expandedContent {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-width: 200px; /* Add minimum width */
+      white-space: nowrap; /* Prevent text wrapping */
+    }
+    #buttonContainer {
+      display: flex;
+      align-items: center;
+    }
+    #timerWidget.minimized #expandedContent {
+      display: none;
+    }
+    #expandedLabel {
+      display: none;
+      line-height: 40px;
+      white-space: nowrap;
+    }
+    #timerWidget.minimized #expandedLabel {
+      display: block;
+    }
+
+    /* Tree view styles */
+    .tick-mark {
+      color: green;
+      margin-left: 5px;
+    }
+    .tree-item {
+      margin-bottom: 5px;
+    }
+    .tree-item-content {
+      margin-left: 20px;
+      display: none;
+    }
+    .tree-item-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
+      transition: transform 0.3s;
+    }
+    .tree-item.open > .tree-item-header .tree-item-icon {
+      transform: rotate(90deg);
+    }
+    .tree-item.open > .tree-item-content {
+      display: block;
+    }
+    .loading {
+      color: #888;
+      font-style: italic;
+      margin-left: 25px;
+    }
+    .lock-icon {
+      width: 16px;
+      height: 16px;
+      margin-left: 5px;
+      fill: #888;
+    }
+    .tree-item-header.locked {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .loading-icon {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+
+    #caseInformation p { margin: 0.4em 0; }
+    #caseInformation span { font-weight: bold; }
+    #caseFindings img { max-width: 100%; }
+    /* Modal for case selection */
+    #caseSelectionModal {
+      display: none; 
+      position: fixed; 
+      top: 0; left: 0; 
+      width: 100%; height: 100%; 
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+    #caseSelectionModal > div {
+      background: white; 
+      margin: 10% auto; 
+      padding: 20px; 
+      width: 80%; max-width: 500px;
+      border-radius: 5px;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+
+    /* Add new layout styles */
+    .main-container {
+        margin-top: 60px;  /* Increased from previous value */
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2em;
+    }
+
+    #liveChatAvatarContainer {
+        max-width: 100%;
+    }
+
+    .right-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 2em;
+    }
+
+    /* Adjust video container for new layout */
+    #videoContainer {
+        aspect-ratio: 16/9;
+        width: 100%;
+    }
+
+    /* Responsive design */
+    @media (max-width: 1200px) {
+        .main-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Add/modify these styles in the <style> section */
+    #topBar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background-color: #ffe8d6;
+        padding: 0.5em 2em;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: flex; /* Use flexbox */
+        justify-content: space-between; /* Space between the three main sections */
+        align-items: center;
+        height: 60px;
+    }
+
+    .left-buttons {
+        flex: 1; /* Take up 1 part of the space */
+        display: flex;
+        justify-content: flex-start; /* Align to the left */
+    }
+
+    .timer-center-container {
+        flex: 2; /* Take up 2 parts of the space for better centering */
+        display: flex;
+        justify-content: center; /* Center the timer */
+    }
+
+    .right-buttons {
+        flex: 1; /* Take up 1 part of the space */
+        display: flex;
+        justify-content: flex-end; /* Align to the right */
+        gap: 1em; /* Space between Performance and Dashboard buttons */
+    }
+
+    /* For mobile screens */
+    @media (max-width: 768px) {
+        #topBar {
+            padding: 0.25em 1em;
+            height: 50px;
+        }
+        
+        .hamburger-menu {
+            display: block !important; /* Force display with !important */
+        }
+        
+        /* Hide desktop buttons on mobile */
+        .left-buttons button,
+        .right-buttons {
+            display: none !important;
+        }
+        
+        /* Show mobile menu when active */
+        .mobile-menu.active {
+            display: block;
+        }
+        
+        /* Ensure timer stays centered */
+        .timer-center-container {
+            justify-self: center;
+        }
+        
+        /* Container for hamburger menu */
+        .hamburger-container {
+            display: flex !important;
+            align-items: center;
+        }
+    }
+
+    .hamburger-container,
+    #dashboardButton {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+    }
+
+    /* For screens under 768px, keep the two-column layout as-is */
+    @media (max-width: 768px) {
+        #topBar {
+            grid-template-columns: auto 1fr; /* unchanged - mobile layout */
+        }
+    }
+
+    /* For screens 769px and wider, switch to four columns */
+    @media (min-width: 769px) {
+        #topBar {
+            grid-template-columns: auto auto 1fr auto; 
+            /*  ^      ^       ^      ^
+                1      2       3      4
+                hamburger
+                BrainBank/Performance
+                timer
+                dashboard
+             */
+        }
+    }
+
+    /* Add these new styles in the <style> section */
+    .initial-state {
+        text-align: center;
+        padding: 1em;
+        margin-top: 60px;  /* Add margin to prevent overlap */
+    }
+
+    .welcome-container {
+        display: flex;
+        align-items: stretch;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1em;
+        gap: 2em;
+    }
+
+    #welcomeImage {
+        width: 45%;
+        height: auto;
+        border: 4px solid #000;
+        box-shadow: 8px 8px 0 #000;
+        flex-shrink: 0;
+        object-fit: contain;
+    }
+
+    .welcome-text {
+        text-align: left;
+        flex-grow: 1;
+    }
+
+    .welcome-text h1 {
+        margin-top: 0;
+        font-size: 1.8em;
+    }
+
+    .reading-instructions {
+        flex: 1;
+        background: #fff;
+        border: 4px solid #000;
+        box-shadow: 4px 4px 0 #000;
+        padding: 1em;
+        margin: 0; /* Remove margin */
+        font-size: 1.1em;
+        align-self: flex-start;
+        text-align: left;
+        width: 45%; /* Match the image width */
+    }
+
+    .reading-instructions h2 {
+        font-size: 1.4em;  /* Added to increase heading size */
+        margin-bottom: 1em;
+        margin-top: 0;
+        color: #ff4d4d;  /* Added more space below heading */
+    }
+
+    .reading-instructions ul {
+        margin: 1em 0;
+        padding-left: 1.5em;
+    }
+
+    .reading-instructions ul ul {
+        margin: 0.5em 0;
+    }
+
+    .reading-instructions li {
+        margin-bottom: 0.5em;  /* Increased spacing between list items */
+        line-height: 1.4;
+    }
+
+    .begin-button {
+        font-size: 1.2em;
+        padding: 0.8em 1.5em;
+        margin: 1em 0;
+        background-color: #4CAF50;
+        border: 4px solid #000;
+        box-shadow: 8px 8px 0 #000;
+    }
+
+    @media (max-width: 768px) {
+        #welcomeImage,
+        .reading-instructions {
+            width: 95%;
+            align-self: center;
+        }
+        
+        .welcome-header h1 {
+            font-size: 2em;
+        }
+
+        .welcome-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1em;
+            width: 100%;
+        }
+    }
+
+    .enter-room-button {
+        font-size: 1.5em;
+        padding: 1em 2em;
+        margin: 2em auto;
+        display: block;
+        background-color: #ff4d4d;
+        border: 4px solid #000;
+        box-shadow: 8px 8px 0 #000;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    /* Update case info container styles */
+    .case-info-container {
+        max-width: 800px;
+        margin: 60px auto 0;  /* Keep top margin for header */
+        padding: 0.5em;  /* Reduced outer padding */
+        display: flex;  /* Add flex display */
+        flex-direction: column;  /* Stack children vertically */
+        align-items: center;  /* Center children horizontally */
+    }
+
+    #caseInformation {
+        margin: 0.5em 0;  /* Reduced margin */
+    }
+
+    .consultation-container {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2em;
+        padding: 2em;
+        margin-top: 60px;  /* Add margin to prevent overlap */
+    }
+
+    /* Add styles for the center container */
+    .timer-center-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Update the case selection button styles */
+    #openCaseSelectionButton {
+        justify-self: start;  /* Align to the start of the grid cell */
+    }
+
+    /* Update the chat input container styles */
+    .chat-input-container {
+        display: flex;
+        align-items: center;
+        gap: 8px; /* Add spacing between elements */
+        background: #fff;
+        border: 4px solid #000;
+        box-shadow: 4px 4px 0 #000;
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    .chat-input {
+        flex-grow: 1;
+        min-height: 20px;
+        max-height: 100px;
+        padding: 8px;
+        border: none;
+        outline: none;
+        font-family: inherit;
+        font-size: 14px;
+        overflow-y: auto;
+        background: transparent;
+        margin-right: 8px; /* Add right margin to create space */
+    }
+
+    .chat-input:empty:before {
+        content: 'Type a message...';
+        color: #999;
+    }
+
+    .chat-button {
+        background: none;
+        border: none;
+        box-shadow: none;
+        padding: 8px;
+        margin: 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chat-button:hover {
+        background: none;
+    }
+
+    .chat-button svg {
+        width: 24px;
+        height: 24px;
+        stroke: #000;
+    }
+
+    /* Add these new styles in the style section */
+    .recording-indicator {
+        flex-shrink: 0; /* Prevent the indicator from shrinking */
+        display: none;
+        width: 10px;
+        height: 10px;
+        background-color: #ff4d4d;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: pulse-recording 1.5s infinite;
+    }
+
+    @keyframes pulse-recording {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
+    }
+
+    .recording .recording-indicator {
+        display: inline-block;
+    }
+
+    #chatHistory {
+        width: 100%;
+        height: 30vh;
+        font-size: medium;
+        background-color: transparent;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .chat-message {
+        max-width: 30%;
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        word-wrap: break-word;
+        clear: both;
+    }
+
+    .doctor-message {
+        background-color: rgba(220, 248, 198, 0.8);
+        align-self: flex-end;
+        margin-right: 5%;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .simulator-message {
+        background-color: rgba(255, 255, 255, 0.8);
+        align-self: flex-start;
+        margin-left: 5%;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    /* Add these new tooltip styles in the <style> section */
+    @keyframes shake {
+        0%, 100% { transform: translateX(-50%) rotate(0deg); }
+        25% { transform: translateX(-50%) rotate(-4deg) translateX(-4px); }
+        75% { transform: translateX(-50%) rotate(4deg) translateX(4px); }
+    }
+
+    .tooltip {
+        position: absolute;
+        background-color: #000;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 1000;
+        pointer-events: none;
+        opacity: 1;
+        transition: opacity 0.3s;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-bottom: 8px;
+        min-width: 80px;
+        max-width: 150px;
+        white-space: normal;
+        text-align: center;
+        word-break: normal;
+        word-wrap: break-word;
+        animation: shake 0.5s ease-in-out infinite; /* Reduced from 1s to 0.5s */
+    }
+
+    .tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 6px;
+        border-style: solid;
+        border-color: #000 transparent transparent transparent;
+    }
+
+    .chat-button-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    /* Add these new loading indicator styles in the <style> section */
+    .case-item.loading {
+        position: relative;
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .case-item.loading::after {
+        content: '';
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 12px;
+        height: 12px;
+        border: 2px solid #000;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: loading-spin 0.8s linear infinite;
+    }
+
+    @keyframes loading-spin {
+        to { transform: translateY(-50%) rotate(360deg); }
+    }
+
+    /* Add these styles to your existing CSS */
+    .info-container {
+        background: #fff;
+        border: 4px solid #000;
+        box-shadow: 4px 4px 0 #000;
+        padding: 1.5em;
+        margin: 1em 0;
+    }
+
+    .info-container h3 {
+        margin-top: 0;
+        font-size: 1.2em;
+        border-bottom: 2px solid #000;
+        padding-bottom: 0.5em;
+        margin-bottom: 1em;
+    }
+
+    #caseFindings img {
+        max-width: 100%;
+        margin: 1em 0;
+    }
+
+    /* Add these new styles in the <style> section */
+    .reveal-findings-button {
+        background-color: #ff4d4d;
+        border: 3px solid #000;
+        box-shadow: 2px 2px 0 #000;
+        color: #000;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.9em;
+        font-weight: bold;
+        padding: 0.5em 1em;
+        text-transform: uppercase;
+        cursor: pointer;
+        margin: 1em 0;
+        transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .reveal-findings-button:hover {
+        background-color: #ff6666;
+    }
+
+    .reveal-findings-button:active {
+        transform: translate(2px, 2px);
+        box-shadow: 0 0 0 #000;
+    }
+
+    /* Add these new styles in the <style> section */
+    .toggle-icon {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        float: right;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+        display: none; /* Hidden by default until findings are revealed */
+    }
+
+    .toggle-icon:hover {
+        opacity: 1;
+    }
+
+    h3 {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Add these new styles for the performance tab layout */
+    #performanceLightbox .main-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        max-width: 90%; /* Increased from 800px */
+        margin: 0 auto;
+        padding: 0 2em; /* Added padding to prevent touching screen edges */
+    }
+
+    #timestampContainer {
+        background: #fff;
+        border: 4px solid #000;
+        box-shadow: 4px 4px 0 #000;
+        padding: 0.75em 1em; /* Reduced padding */
+        display: flex;
+        align-items: center;
+        gap: 1em;
+        max-width: 400px; /* Added max-width to make it smaller */
+        margin: 0 auto; /* Center the container */
+    }
+
+    #timestampContainer label {
+        font-weight: bold;
+        white-space: nowrap;
+        font-size: 0.9em; /* Slightly smaller font */
+    }
+
+    #timestampSelector {
+        flex-grow: 1;
+        padding: 0.4em 0.6em; /* Reduced padding */
+        border: 2px solid #000;
+        font-family: inherit;
+        background: #fff;
+        font-size: 0.9em; /* Slightly smaller font */
+    }
+
+    #evaluationResults {
+        background: #fff;
+        border: 4px solid #000;
+        box-shadow: 4px 4px 0 #000;
+        padding: 2em;
+        max-width: 100%; /* Added to ensure container respects parent width */
+    }
+
+    #evaluationResults h2 {
+        margin-top: 0;
+        margin-bottom: 1.5em;
+    }
+
+    .evaluation-section {
+        margin-bottom: 2em;
+    }
+
+    .evaluation-section:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Update evaluation results styles for better centering */
+    #evaluationResults h2,
+    #evaluationResults .evaluation-section h3 {
+        text-align: center !important;
+        width: 100%;
+        display: block;
+    }
+
+    .evaluation-section h3 {
+        color: #060000;
+        margin-bottom: 1em;
+        padding-bottom: 0.5em;
+        border-bottom: 2px solid #eee;
+        text-transform: none; /* Remove uppercase if needed */
+    }
+
+    .evaluation-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2em; /* Increased from 1.5em */
+    }
+
+    .evaluation-column {
+        padding: 1.5em;
+        border-radius: 8px;
+    }
+
+    .covered-column {
+        background-color: #e8f5e9;  /* Light green background */
+        border: 2px solid #4caf50;
+    }
+
+    .missed-column {
+        background-color: #ffebee;  /* Light red background */
+        border: 2px solid #ff4d4d;
+    }
+
+    .column-header {
+        font-weight: bold;
+        margin-bottom: 1em;
+        padding-bottom: 0.5em;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .covered-column .column-header {
+        color: #2e7d32;  /* Darker green */
+    }
+
+    .missed-column .column-header {
+        color: #c62828;  /* Darker red */
+    }
+
+    #evaluationResults ul {
+        margin: 0;
+        padding-left: 1.2em;
+    }
+
+    #evaluationResults li {
+        margin-bottom: 0.5em;
+        line-height: 1.4;
+    }
+
+    .covered-column li {
+        color: #000000;  
+    }
+
+    .missed-column li {
+        color: #000000;  
+    }
+
+    /* Make it responsive */
+    @media (max-width: 768px) {
+        #performance .main-container {
+            padding: 0 1em;
+        }
+        
+        .evaluation-grid {
+            grid-template-columns: 1fr;
+            gap: 1em;
+        }
+    }
+
+    /* Add these new styles in the style section: */
+    .welcome-header {
+        text-align: center;
+        margin-bottom: 1em; /* Increased spacing */
+    }
+
+    .welcome-header h1 {
+        font-size: 2.5em; /* Larger title */
+        margin-bottom: 1em;
+    }
+
+    /* Performance lightbox styles */
+    .performance-container {
+        background: white;
+        padding: 2em;
+        border-radius: 10px;
+        max-width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        margin: 0 auto; /* Add margin auto to center horizontally */
+    }
+
+    .performance-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2em;
+    }
+
+    .close-button {
+        background: none;
+        border: none;
+        font-size: 2em;
+        cursor: pointer;
+        padding: 0.2em 0.5em;
+        line-height: 1;
+    }
+
+    .close-button:hover {
+        color: #ff4d4d;
+    }
+
+    /* Add these styles for mobile responsiveness */
+    @media (max-width: 768px) {
+        
+        #timerContainer,
+        #expandedContent {
+            min-width: 150px;
+        }
+        
+        #timerText {
+            white-space: nowrap;
+        }
+    }
+
+    /* Add these styles to your CSS section */
+    .top-bar-button {
+        border: none;
+        border-radius: 2px;
+        color: white;
+        font-family: 'Roboto', sans-serif;
+        font-size: 0.8em;
+        padding: 0.5em 0.7em;
+        cursor: pointer;
+        white-space: nowrap; /* Add this to prevent text wrapping */
+        text-align: center; /* Add this to ensure text is centered */
+    }
+
+    @media (max-width: 768px) {
+        .top-bar-button {
+            font-size: 0.7em; /* Slightly increased from 0.3em */
+            padding: 0.4em 0.6em;
+            min-width: 60px; /* Add this to ensure minimum button width */
+        }
+    }
+
+    .brain-bank-button {
+        background-color: #d84a38;
+    }
+
+    .performance-button {
+        background-color: #4CAF50;
+    }
+
+    .dashboard-button {
+        background-color: #6c757d;  /* A neutral gray color */
+    }
+
+    /* Add these new styles for mobile top bar */
+    .hamburger-menu {
+        display: none;  /* Hidden by default */
+        cursor: pointer;
+        padding: 8px 12px;
+        background-color: #d84a38; /* Match brain-bank-button color */
+        color: white;
+        border: none;
+        border-radius: 2px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 0.8em;
+        white-space: nowrap;
+        text-align: center;
+        box-shadow: 2px 2px 0 #000; /* Added box shadow to match other buttons */
+        border: 3px solid #000; /* Added border to match other buttons */
+    }
+
+    /* When the button is clicked/active */
+    .hamburger-menu:active {
+        transform: translate(2px, 2px);
+        box-shadow: 0 0 0 #000;
+    }
+
+    /* Remove the SVG styles since we won't need them */
+    .hamburger-menu svg {
+        display: none;
+    }
+
+    .mobile-menu {
+        display: none;  /* Hidden by default */
+        position: fixed;
+        top: 50px;  /* Below the top bar */
+        left: 0;
+        background: #ffe8d6;
+        width: 200px;
+        padding: 1em;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        z-index: 99;
+        transition: transform 0.3s ease-in-out; /* Add smooth transition */
+        transform: translateX(-100%); /* Start off-screen */
+    }
+
+    .mobile-menu.active {
+        transform: translateX(0); /* Slide in when active */
+    }
+
+    .mobile-menu .top-bar-button {
+        display: block;
+        width: 100%;
+        margin-bottom: 0.5em;
+        font-size: 1em;
+        padding: 0.8em;
+    }
+
+    /* Update media query for mobile devices */
+    @media (max-width: 768px) {
+        #topBar {
+            grid-template-columns: auto 1fr;  /* Two columns: hamburger+menu and timer */
+            padding: 0.25em 1em;
+            height: 50px;
+        }
+
+        .hamburger-menu {
+            display: block !important; /* Force display with !important */
+        }
+
+        /* Hide the regular button container */
+        #topBar > div:not(.timer-center-container):not(.hamburger-container) {
+            display: none !important;
+        }
+
+        /* Show mobile menu when active */
+        .mobile-menu.active {
+            display: block;
+        }
+
+        /* Ensure timer stays centered */
+        .timer-center-container {
+            justify-self: center;
+        }
+
+        /* Container for hamburger menu */
+        .hamburger-container {
+            display: flex !important;
+            align-items: center;
+        }
+    }
+
+    /* Add these new loading indicator styles in the <style> section */
+    .evaluation-message {
+        background-color: #f8f9fa;
+        border: 3px solid #000;
+        box-shadow: 3px 3px 0 #000;
+        padding: 1em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1em;
+        margin: 1em 0;
+        border-radius: 6px;
+    }
+
+    .evaluating-spinner {
+        display: inline-block;
+        width: 80px;
+        height: 20px;
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    .evaluating-spinner:after {
+        content: " 🧠";
+        animation: thinking 1.5s infinite;
+        display: inline-block;
+    }
+
+    @keyframes thinking {
+        0% { content: " 🧠"; }
+        25% { content: " 🔍"; }
+        50% { content: " 📊"; }
+        75% { content: " 💭"; }
+    }
+
+    .evaluation-progress {
+        height: 10px;
+        background: linear-gradient(90deg, #ff4d4d, #ffcc00, #4CAF50);
+        margin-top: 10px;
+        border-radius: 5px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .evaluation-progress:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.3);
+        animation: progress-wave 2s infinite linear;
+    }
+
+    @keyframes progress-wave {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+
+    .evaluation-tips {
+        font-size: 0.9em;
+        font-style: italic;
+        margin-top: 15px;
+        color: #666;
+    }
+
+    /* Add these new styles for mobile optimization */
+    @media (max-width: 768px) {
+        .case-info-container {
+            margin: 50px 0 0 0;  /* Remove horizontal margins */
+            padding: 50px 0 0 0;  /* Remove all padding */
+            width: 100%;  /* Full width */
+            max-width: none;  /* Remove max-width constraint on mobile */
+        } 
+
+        #caseInformation {
+            width: 95%;  /* Full width */
+        }
+           /* Adjust the consultation container layout */
+        .consultation-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            align-items: center;
+            margin: 60px 0 0 0; /* Changed to auto for horizontal centering */
+            padding: 0; /* Remove padding completely */
+            max-width: 100%; /* Ensure it doesn't exceed viewport width */
+            box-sizing: border-box; /* Make sure padding and borders are included in width calculation */
+        }
+
+        /* Make the avatar container take up more space */
+        #liveChatAvatarContainer {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 1em;
+        }
+        
+        body {
+            margin: 0;
+            padding: 1em;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+        }
+        /* Adjust video container size */
+        #videoContainer {
+            width: 100%;
+            max-width: 100%;
+            aspect-ratio: 16/9;
+            margin: 0 auto;
+        }
+
+        #localVideo {
+            width: 100%;
+            height: auto;
+        }
+
+        /* Make buttons smaller and more compact */
+        #pauseResumeSession,
+        #endSession,
+        #restartSession,
+        #getEvaluationButton {
+            font-size: 0.8em;
+            padding: 0.4em 0.6em;
+            margin: 0.2em;
+        }
+
+        /* Move the right panel below the avatar */
+        .right-panel {
+            width: 100%;
+            margin-top: 1em;
+            padding: 0 1em;
+        }
+
+        /* Adjust the chat input container */
+        .chat-input-container {
+            width: 90%;
+            max-width: 100%;
+            padding: 0.5em;
+        }
+
+        #userMessageBox {
+            font-size: 0.9em;
+            padding: 0.5em;
+        }
+
+        /* Make the microphone button smaller */
+        .chat-button {
+            width: 32px;
+            height: 32px;
+            padding: 6px;
+        }
+
+        /* Adjust info containers for better mobile viewing */
+        .info-container {
+            margin-bottom: 1em;
+            padding: 0.8em;
+        }
+    }
+
+    #overlayArea {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        pointer-events: none;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    #chatHistory {
+        width: 100%;
+        height: 100%;
+        font-size: medium;
+        background-color: transparent;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        pointer-events: auto;
+    }
+
+    .chat-message {
+        max-width: 35%;
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        word-wrap: break-word;
+    }
+
+    .doctor-message {
+        background-color: rgba(220, 248, 198, 0.8);
+        align-self: flex-end;
+        margin-right: 0;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .simulator-message {
+        background-color: rgba(255, 255, 255, 0.8);
+        align-self: flex-start;
+        margin-left: 0;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    /* Update chat message styles for mobile */
+    @media (max-width: 768px) {
+        .chat-message {
+            max-width: 25%;  /* Increased from 30% to use more width on mobile */
+            margin-bottom: 8px;  /* Reduced from 10px */
+            padding: 6px 10px;  /* Reduced from 8px 12px */
+            font-size: 0.9em;  /* Smaller font size on mobile */
+        }
+
+        #chatHistory {
+            padding: 8px;  /* Reduced from 10px */
+            font-size: 0.9em;  /* Smaller base font size for chat history */
+        }
+
+        .doctor-message {
+            margin-right: 3%;  /* Reduced from 5% */
+        }
+
+        .simulator-message {
+            margin-left: 3%;  /* Reduced from 5% */
+        }
+    }
+
+    /* Mobile optimization for performance lightbox */
+    @media (max-width: 768px) {
+
+        .performance-header {
+            margin-bottom: 0.5em;
+        }
+
+        .performance-header h2 {
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        #timestampContainer {
+            margin-bottom: 1em;
+        }
+
+        #timestampContainer label {
+            display: block;
+            margin-bottom: 0.5em;
+            font-size: 0.9em;
+        }
+
+        #timestampSelector {
+            width: 100%;
+            padding: 0.5em;
+        }
+
+        .evaluation-section {
+            margin-bottom: 1em;
+        }
+
+        .evaluation-section h3 {
+            font-size: 1.1em;
+            margin: 0.5em 0;
+        }
+
+        .evaluation-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5em;
+        }
+
+        .evaluation-column {
+            padding: 0.5em;
+        }
+
+        .column-header {
+            font-size: 0.9em;
+            padding: 0.3em;
+        }
+
+        .evaluation-column ul {
+            margin: 0.5em 0;
+            padding-left: 1.5em;
+        }
+
+        .evaluation-column li {
+            font-size: 0.9em;
+            margin-bottom: 0.3em;
+        }
+
+        .close-button {
+            padding: 0.3em 0.6em;
+            font-size: 1.2em;
+        }
+        
+        #performanceLightbox .main-container {
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        #evaluationResults {
+            max-width: 100%;
+            padding: 1em;
+            margin: 0;
+            border-radius: 0;
+        }
+
+        .performance-container {
+            padding: 0.5em;
+            max-width: 100%;
+            margin: 0;
+            border-radius: 0;
+        }
+    }
+
+    /* Add loading spinner styles for dashboard button */
+    .dashboard-button.loading {
+        position: relative;
+        color: transparent !important;
+    }
+
+    .dashboard-button.loading::after {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        top: 50%;
+        left: 50%;
+        margin: -8px 0 0 -8px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Add these new styles for findings image */
+    #findingsImage-sidebar {
+        max-width: 300px;  /* Restrict maximum width */
+        max-height: 200px; /* Restrict maximum height */
+        width: auto;       /* Maintain aspect ratio */
+        height: auto;      /* Maintain aspect ratio */
+        object-fit: contain; /* Ensure entire image is visible */
+        margin: 1em 0;     /* Add some vertical spacing */
+        display: none;     /* Hide by default */
+    }
+
+    /* Add this to ensure both image and text are hidden by default */
+    #findingsImage-sidebar.hidden,
+    #findingsText-sidebar.hidden {
+        display: none;
+    }
+
+    /* Adjust for mobile screens */
+    @media (max-width: 768px) {
+        #findingsImage-sidebar {
+            max-width: 200px;  /* Smaller on mobile */
+            max-height: 150px; /* Smaller on mobile */
+        }
+    }
+
+    /* Feedback Popup Styles */
+    .feedback-popup {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 350px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        padding: 20px;
+        z-index: 10000;
+    }
+
+    .feedback-popup h3 {
+        margin-top: 0;
+        font-size: 18px;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .feedback-popup p {
+        font-size: 14px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    .whatsapp-link {
+        display: block;
+        text-align: center;
+        margin: 15px 0;
+        padding: 10px;
+        background-color: #25D366;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: bold;
+        transition: background-color 0.2s;
+    }
+
+    .whatsapp-link:hover {
+        background-color: #128C7E;
+    }
+
+    .whatsapp-link i {
+        margin-right: 8px;
+    }
+
+    .star-rating {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+
+    .star-rating .star {
+        font-size: 26px;
+        cursor: pointer;
+        color: #ccc;
+        margin: 0 5px;
+        transition: color 0.2s;
+    }
+
+    .star-rating .star.active {
+        color: #FFD700;
+    }
+
+    .feedback-text {
+        width: 100%;
+        height: 80px;
+        padding: 8px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: none;
+        font-family: inherit;
+    }
+
+    .feedback-buttons {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .feedback-buttons button {
+        flex: 1;
+        padding: 8px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .feedback-buttons button:first-child {
+        background-color: #f1f1f1;
+        margin-right: 8px;
+    }
+
+    .feedback-buttons button:last-child {
+        background-color: #4c84ff;
+        color: white;
+    }
+
+    .feedback-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+    }
+
+    .feedback-submitted {
+        text-align: center;
+        display: none;
+    }
+
+    .feedback-submitted p {
+        margin-bottom: 15px;
+    }
+
+    .feedback-submitted button {
+        padding: 8px 16px;
+        background-color: #4c84ff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .connectivity-notice {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 10px 15px;
+        margin: 10px 0;
+        font-size: 0.9em;
+        text-align: left;
+    }
+
+    .connectivity-notice p {
+        margin: 0 0 5px 0;
+        color: #666;
+    }
+
+    .connectivity-notice ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .connectivity-notice li {
+        margin: 3px 0;
+    }
+
+    .network-meter {
+        display: inline-block;
+        margin-left: 5px;
+        padding: 0 0px;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .signal-bars {
+        display: inline-flex;
+        align-items: flex-end;
+        height: 15px;  /* Reduced from 20px */
+    }
+
+    .signal-bar {
+        width: 4px;
+        margin: 0 1px;
+        background-color: #ccc;
+        border-radius: 1px;
+    }
+
+    .signal-bar.active {
+        background-color: #4CAF50;
+    }
+
+    .speed-display {
+        font-size: 10px;
+        color: #666;
+        margin-top: 2px;
+        line-height: 1;
+    }
+
+    .bar-1 { height: 25%; }
+    .bar-2 { height: 50%; }
+    .bar-3 { height: 75%; }
+    .bar-4 { height: 100%; }
+  </style>
+
+  <!-- External Scripts -->
+  <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+
+  <!-- Add Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Space+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- New Top Bar Section with Timer and Case Selection Button -->
+  <div id="topBar">
+    <!-- Left side: hamburger menu (mobile) and BrainBank button -->
+    <div class="hamburger-container" style="display: flex; align-items: center;">
+        <!-- Hamburger menu for mobile - moved outside other containers -->
+        <div class="hamburger-menu" style="display: none;">
+            Menu
+        </div>
+        <!-- Mobile menu (hidden by default) -->
+        <div class="mobile-menu">
+            <button id="openCaseSelectionButton-mobile" class="top-bar-button brain-bank-button">
+                🧠 BrainBank
+            </button>
+            <button id="openPerformanceButton-mobile" class="top-bar-button performance-button">
+                📊 Performance
+            </button>
+            <button id="dashboardButton-mobile" class="top-bar-button dashboard-button">
+                🚪 Dashboard
+            </button>
+        </div>
+    </div>
+    
+    <div class="left-buttons">
+        <!-- BrainBank button (desktop) -->
+        <button id="openCaseSelectionButton" class="top-bar-button brain-bank-button">
+            🧠<br>BrainBank
+        </button>
+    </div>
+    
+    <!-- Center: Timer -->
+    <div class="timer-center-container">
+        <div id="timerContainer">
+            <div id="timerWidget" class="minimized">
+                <div id="expandedContent">
+                    <div id="timerText">
+                        <span id="time">01:30</span><br>
+                        <span id="readingTimeLabel">Reading Time</span>
+                    </div>
+                </div>
+                <div id="expandedLabel">GMC 8-minute timer</div>
+                <svg id="toggleIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <g class="eye">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </g>
+                    <g class="eye-slash">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right side: Performance and Dashboard buttons -->
+    <div class="right-buttons">
+        <button id="openPerformanceButton" class="top-bar-button performance-button">
+            📊<br>Performance
+        </button>
+        <button id="dashboardButton" class="top-bar-button dashboard-button">
+            🚪<br>Dashboard
+        </button>
+    </div>
+  </div>
+
+  <!-- Replace the main-container div with this new structure -->
+  <div class="main-content">
+    <div id="practice">
+        <div class="initial-state" id="initialState">
+            <div class="welcome-header">
+                <h1 style="font-size: 1.8em;">Welcome to the PLAB 2 Simulator</h1>
+                <div class="connectivity-notice">
+                    <p>⚠️ For the best experience:</p>
+                    <ul>
+                        <li>Use Google Chrome on a computer with stable internet connection</li>
+                        <li>If using mobile, ensure you have strong internet connection and use Chrome browser</li>
+                    </ul>
+                    <div style="display: flex; flex-direction: column; margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">
+                        <span style="margin-bottom: 5px; color: #666;">Recommended Speed: 10 MB/s</span>
+                        <div style="display: flex; align-items: center;">
+                            <span style="margin-right: 10px;">Your Network Speed:</span>
+                            <div id="welcomeNetworkMeter" class="network-meter">
+                                <div class="signal-bars">
+                                    <div class="signal-bar bar-1"></div>
+                                    <div class="signal-bar bar-2"></div>
+                                    <div class="signal-bar bar-3"></div>
+                                    <div class="signal-bar bar-4"></div>
+                                </div>
+                                <div class="speed-display">0 KB/s</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <button class="begin-button" id="beginReadingButton">📖 Begin Reading Time</button>
+            </div>
+            <div class="welcome-container">
+                <img id="welcomeImage" src="https://static.wixstatic.com/media/38c04a_1f6362d96e4f4902b17ed032b87cf06a~mv2.jpeg" alt="Welcome Image">
+                <div class="reading-instructions">
+                    <h2>Reading Time Instructions</h2>
+                    <ul>
+                        <li>You have 90 seconds to read the case</li>
+                        <li>Note key details:
+                            <ul>
+                                <li>Setting</li>
+                                <li>Patient details</li>
+                                <li>Required tasks</li>
+                                <li>Special instructions</li>
+                            </ul>
+                        </li>
+                        <li>8-minute consultation follows</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="case-info-container hidden" id="caseInfoState">
+            <div id="caseInformation">
+                <!-- Candidate Info Container -->
+                <div id="candidateInfo" class="info-container">
+                    <h3>Candidate Information</h3>
+                    <p><strong>Where Are You:</strong><br/><span style="font-weight: normal;" id="whereAreYou"></span></p>
+                    <p><strong>Who Your Patient Is:</strong><br/><span style="font-weight: normal;" id="whoYourPatientIs"></span></p>
+                    <p><strong>Other Information:</strong><br/><span style="font-weight: normal;" id="otherInformation"></span></p>
+                    <p><strong>What You Must Do:</strong><br/><span style="font-weight: normal;" id="whatYouMustDo"></span></p>
+                    <p><strong>Special Note:</strong><br/><span style="font-weight: normal;" id="specialNote"></span></p>
+                </div>
+            </div>
+            <button class="enter-room-button" id="enterRoomButton">🚪 Enter the Room</button>
+        </div>
+
+        <div class="consultation-container hidden" id="consultationState">
+            <div id="liveChatAvatarContainer">
+                <!-- Add pause/resume button before end session button -->
+                <button id="pauseResumeSession" onclick="window.togglePauseSession()">
+                    ⏸️ Pause
+                </button>
+                <button id="endSession" onclick="window.endSessionWithFeedback()">
+                    🛑 End
+                </button>
+                <button id="restartSession" onclick="window.restartSession()">
+                    🔄 Restart
+                </button>
+                <div id="networkMeter" class="network-meter">
+                    <div class="signal-bars">
+                        <div class="signal-bar bar-1"></div>
+                        <div class="signal-bar bar-2"></div>
+                        <div class="signal-bar bar-3"></div>
+                        <div class="signal-bar bar-4"></div>
+                    </div>
+                    <div class="speed-display">0 KB/s</div>
+                </div>
+                
+                <!-- Add the evaluation button container here -->
+                <div id="evaluationButtonContainer" style="display: none;">
+                    <button id="getEvaluationButton" onclick="getEvaluationFromAI()">
+                        Get Evaluation from AI
+                    </button>
+                </div>
+                
+                <div id="videoContainer" style="position: relative; width: 100%;">
+                    <div id="overlayArea" style="position: absolute;">
+                        <div id="chatHistory" style="width: 100%; height: 90%; font-size: medium; background-color: transparent; overflow-y: auto;" hidden></div>
+                    </div>
+                    <div id="localVideo">
+                        <video id="idleVideo" src="https://video.wixstatic.com/video/38c04a_f891c30ad2424bf58ac8b7419a40fdca/1080p/mp4/file.mp4"
+                                autoplay loop muted playsinline></video>
+                        <video id="talkingVideo" src="https://video.wixstatic.com/video/38c04a_95bcd277c8e8485b99710c1c55a3576d/1080p/mp4/file.mp4" 
+                                autoplay loop muted playsinline hidden></video>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <div id="userMessageBox" class="chat-input" contenteditable="true"></div>
+                    <div class="recording-indicator"></div>
+                    <div class="chat-button-container">
+                        <button id="microphone" onclick="window.microphone()" class="chat-button" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path class="mic-icon" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path class="mic-icon" d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line class="mic-icon" x1="12" y1="19" x2="12" y2="23"></line>
+                                <line class="mic-icon" x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </button>
+                        <div class="tooltip">Click here and speak clearly</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right panel - Case Information -->
+            <div class="right-panel">
+                <div id="caseInformation-sidebar">
+                    <!-- Candidate Info Container -->
+                    <div id="candidateInfo-sidebar" class="info-container">
+                        <h3>Candidate Information</h3>
+                        <p><strong>Where Are You:</strong><br/><span id="whereAreYou-sidebar"></span></p>
+                        <p><strong>Who Your Patient Is:</strong><br/><span id="whoYourPatientIs-sidebar"></span></p>
+                        <p><strong>Other Information:</strong><br/><span id="otherInformation-sidebar"></span></p>
+                        <p><strong>What You Must Do:</strong><br/><span id="whatYouMustDo-sidebar"></span></p>
+                        <p><strong>Special Note:</strong><br/><span id="specialNote-sidebar"></span></p>
+                    </div>
+                    <!-- Findings Container -->
+                    <div id="caseFindings-sidebar" class="info-container">
+                        <h3>
+                            Findings
+                            <svg id="toggleFindings" class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </h3>
+                        <img id="findingsImage-sidebar" src="" alt="Findings Image" style="display:none;">
+                        <button id="revealFindings" class="reveal-findings-button">Reveal Findings</button>
+                        <div id="findingsText-sidebar" class="hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- Add performance lightbox -->
+  <div id="performanceLightbox" class="modal-overlay" style="display: none;">
+    <div class="performance-container">
+        <div class="performance-header">
+            <h2>Performance Analysis</h2>
+            <button class="close-button" onclick="closePerformanceLightbox()">×</button>
+        </div>
+        <div class="main-container">
+            <div id="timestampContainer">
+                <label for="timestampSelector">Select Timestamp:</label>
+                <select id="timestampSelector"></select>
+            </div>
+            <div id="evaluationResults">
+                <h2>Evaluation Results</h2>
+                <div>
+                    <h3>Data Gathering</h3>
+                    <div><strong>Covered:</strong> <span id="dataGatheringCovered"></span></div>
+                    <div><strong>Missed:</strong> <span id="dataGatheringMissed"></span></div>
+                </div>
+                <div>
+                    <h3>Management</h3>
+                    <div><strong>Covered:</strong> <span id="managementCovered"></span></div>
+                    <div><strong>Missed:</strong> <span id="managementMissed"></span></div>
+                </div>
+                <div>
+                    <h3>Interpersonal Skills</h3>
+                    <div><strong>Covered:</strong> <span id="interpersonalSkillsCovered"></span></div>
+                    <div><strong>Missed:</strong> <span id="interpersonalSkillsMissed"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- Tree View Section -->
+  <div id="treeViewContainer">
+    <h2>Select a Case</h2>
+    <div id="treeView" class="tree-view"></div>
+    <button id="closeCaseSelection" class="timer-button" style="margin-top: 1em;">Close</button>
+  </div>
+
+  <!-- Add overlay div -->
+  <div id="modalOverlay" class="modal-overlay"></div>
+
+  <!-- Add the feedback popup component -->
+  <div class="feedback-overlay" id="feedbackOverlay"></div>
+  <div class="feedback-popup" id="feedbackPopup">
+      <div class="feedback-form" id="feedbackForm">
+          <h3>How was your session?</h3>
+          <p>Please rate your experience with this practice session</p>
+          <div class="star-rating" id="starRating">
+              <span class="star" data-value="1">★</span>
+              <span class="star" data-value="2">★</span>
+              <span class="star" data-value="3">★</span>
+              <span class="star" data-value="4">★</span>
+              <span class="star" data-value="5">★</span>
+          </div>
+          <textarea class="feedback-text" id="feedbackText" placeholder="Share your thoughts about this session (Give it to us straight! What worked and what didnt work?)"></textarea>
+          <div class="feedback-buttons">
+              <button id="cancelFeedback">Skip</button>
+              <button id="submitFeedback">Submit</button>
+          </div>
+          <a href="https://wa.me/message/LGHJITHZCCHKP1" target="_blank" class="whatsapp-link">
+              <i>💬</i> Contact Us on WhatsApp
+          </a>
+      </div>
+      <div class="feedback-submitted" id="feedbackSubmitted">
+          <p>Thank you for your feedback!</p>
+          <button id="closeFeedback">Close</button>
+          <a href="https://wa.me/message/LGHJITHZCCHKP1" target="_blank" class="whatsapp-link">
+              <i>💬</i> Contact Us on WhatsApp
+          </a>
+      </div>
+  </div>
+
+  <!-- Combined JavaScript Code -->
+  <script>
+    /* -----------------------------------------
+       Global Variables & Default Configurations 
+    ----------------------------------------- */
+        // Global objects
+    var speechRecognizer;
+    var currentSynthesizer = null; // For managing the current synthesizer instance
+    var messages = [];
+    var messageInitiated = false;
+    var sessionActive = false;
+    let currentPatientInfo = '';
+    let azureConfig = null;
+    var lastSpeakTime = new Date();
+    var dataSources = []; // Add this back to fix the reference error
+    var hasUsedMic = false;  // Add this
+    var hasUsedSend = false; // Add this
+    
+    // Default configuration for speech and synthesis
+    const DEFAULT_CONFIG = {
+      sttLocales: 'en-US',
+      ttsVoice: 'en-US-JennyNeural',
+      openAIDeploymentName: 'gpt-4o2'
+    };
+
+    // Add isPaused state variable with other timer variables
+    var timerInterval, flashInterval, totalTime = 90, mainTimerTime = 480, pausedTime = 0, isPaused = false;
+
+    // Add this variable at the top level of your script section
+    let currentChecklist = null;
+
+    /* -----------------------------------------
+       Event Listener for Incoming Messages 
+    ----------------------------------------- */
+    window.addEventListener('message', function(event) {
+      const data = event.data;
+      //console.log("Received message event:", data.type); // Log message type
+      
+      if (data.type === 'setAzureConfig') {
+        azureConfig = data.config;
+      } else if (data.type === 'updatePatientInfo') {
+        //console.log("Updating patient info:", data.patientInfo); // Log incoming patient info
+        currentPatientInfo = data.patientInfo;
+        initMessages();
+      } else if (data.type === 'startSession') {
+        startSession();
+      } else if (data.type === 'stopSession') {
+        stopSession();
+      } else if (data.type === 'setChecklist') {
+        console.log("Setting checklist:", data.checklist);
+        currentChecklist = data.checklist;
+      } else if (data.type === 'topicSelected') {
+        // Optionally forward topic selection events.
+      } else if (data.type === 'caseSelected') {
+        // Optionally forward case selection events.
+      } else if (data.type === 'updateCaseInformation') {
+        updateCaseInformationUI(data.caseData);
+      } else if (data.type === 'updateTimestamps') {
+        updateTimestampsUI(data.caseName, data.options);
+      } else if (data.type === 'clearTimestamps') {
+        clearTimestampsUI();
+      } else if (data.type === 'displayResults') {
+        displayResultsUI(data.results);
+      } else if (data.type === 'openCaseSelection') {
+        showCaseSelectionModal();
+      } else if (data.type === 'closeCaseSelection') {
+        hideCaseSelectionModal();
+      } else if (data.type === 'setLoading') {
+        // Add handler for loading state
+        treeView.setItemLoading(event.data.caseId, event.data.isLoading);
+      } else if (data.type === 'showPerformance') {
+        showPerformanceLightbox(data.autoSelectLatest);
+      }
+    }, false);
+
+        // Simplified startSession function
+        function startSession() {
+            isPaused = false;
+            document.getElementById('pauseResumeSession').innerHTML = '⏸️ Pause';
+            document.getElementById('pauseResumeSession').style.display = ''; // Show pause button
+            document.querySelector('.chat-input-container').style.display = ''; // Show input bar
+            
+            const microphoneButton = document.getElementById('microphone');
+            const localVideo = document.getElementById('localVideo');
+            const chatHistory = document.getElementById('chatHistory');
+            const userMessageBox = document.getElementById('userMessageBox');
+            const showTypeMessage = document.getElementById('showTypeMessage');
+            const endSessionButton = document.getElementById('endSession');
+            const evaluationButtonContainer = document.getElementById('evaluationButtonContainer');
+
+            // Check if all required elements exist
+            if (microphoneButton) microphoneButton.disabled = false;
+            if (localVideo) localVideo.hidden = false;
+            if (chatHistory) {
+                chatHistory.hidden = false;  // Show chat history
+                chatHistory.style.display = 'flex';  // Ensure proper display mode
+                chatHistory.innerHTML = '';  // Clear previous chat history
+            }
+            if (userMessageBox) userMessageBox.hidden = false;
+            if (showTypeMessage) showTypeMessage.disabled = false;
+            if (endSessionButton) endSessionButton.style.display = '';
+            if (evaluationButtonContainer) evaluationButtonContainer.style.display = 'none';
+
+            initSpeechRecognition();
+            sessionActive = true;
+        }
+
+        // Modify the stopSession function to show the evaluation button
+        window.stopSession = () => {
+            isPaused = false;
+            document.getElementById('pauseResumeSession').innerHTML = '⏸️ Pause';
+            document.getElementById('microphone').disabled = true;
+            
+            // Update chat history visibility
+            const chatHistory = document.getElementById('chatHistory');
+            if (chatHistory) {
+                // Save chat history before hiding
+                const chatHistoryContent = chatHistory.innerHTML;
+                if (chatHistoryContent) {
+                    window.parent.postMessage({
+                        type: 'saveChatHistory',
+                        chatHistory: chatHistoryContent
+                    }, '*');
+                }
+                chatHistory.style.display = 'none';  // Hide chat history
+            }
+            
+            document.getElementById('userMessageBox').hidden = true;
+            document.getElementById('localVideo').hidden = true;
+            document.getElementById('evaluationButtonContainer').style.display = 'block';
+            
+            // Modified speech recognizer cleanup
+            if (document.getElementById('microphone').innerHTML === 'Stop Microphone') {
+                speechRecognizer.stopContinuousRecognitionAsync(
+                    () => {
+                        document.getElementById('microphone').innerHTML = 'Start Microphone';
+                    },
+                    (err) => {
+                        console.log("Failed to stop continuous recognition:", err);
+                    }
+                );
+            }
+            
+            if (speechRecognizer) {
+                try {
+                    speechRecognizer.close();
+                } catch (error) {
+                    console.log("Speech recognizer already disposed or invalid");
+                }
+                speechRecognizer = null;
+            }
+            
+            sessionActive = false;
+        };
+
+        // Add new function to initialize speech recognition
+        function initSpeechRecognition() {
+            const speechRecognitionConfig = SpeechSDK.SpeechConfig.fromSubscription(
+                azureConfig.speechApiKey.value,
+                azureConfig.speechRegion.value
+            );
+            
+            var sttLocales = DEFAULT_CONFIG.sttLocales.split(',');
+            var autoDetectSourceLanguageConfig = SpeechSDK.AutoDetectSourceLanguageConfig.fromLanguages(sttLocales);
+            speechRecognizer = SpeechSDK.SpeechRecognizer.FromConfig(
+                speechRecognitionConfig, 
+                autoDetectSourceLanguageConfig, 
+                SpeechSDK.AudioConfig.fromDefaultMicrophoneInput()
+            );
+        }
+
+        // Initialize messages
+        function initMessages() {
+            messages = [];
+
+            if (dataSources.length === 0) {
+                let systemPrompt = 'You are a trained actor simulating a patient for training doctors for difficult consultations. Please use the given information below to act out the scenario. Only give information in small quantities only if the doctor asks the right questions and do not answer everything at once. So only one point should be said in one sentence so that the doctor can focus on it. Only answer what the doctor asks for. If there is no information in your patient info, please make up some relevant information without straying too much from the scenario. Any answers you make up should not interfere with the rest of the scenario and should fit into it well. Try to use simple layman language like how a patient speaks and not any scientific medical jargon at all. Please never ever break character. Please always be a patient and never be a doctor.\n\nPatient Information:\n';
+                
+                // Use the stored patientInfo
+                if (currentPatientInfo) {
+                    // Strip HTML tags if present
+                    let cleanPatientInfo = currentPatientInfo.replace(/<[^>]*>/g, '');
+                    systemPrompt += cleanPatientInfo;
+                }
+
+                let systemMessage = {
+                    role: 'system',
+                    content: systemPrompt
+                };
+
+                messages.push(systemMessage);
+            }
+        }
+
+        // Set data sources for chat API
+        function setDataSources(azureCogSearchEndpoint, azureCogSearchApiKey, azureCogSearchIndexName) {
+            let dataSource = {
+                type: 'AzureCognitiveSearch',
+                parameters: {
+                    endpoint: azureCogSearchEndpoint,
+                    key: azureCogSearchApiKey,
+                    indexName: azureCogSearchIndexName,
+                    semanticConfiguration: '',
+                    queryType: 'simple',
+                    fieldsMapping: {
+                        contentFieldsSeparator: '\n',
+                        contentFields: ['content'],
+                        filepathField: null,
+                        titleField: 'title',
+                        urlField: null
+                    },
+                    inScope: true,
+                    roleInformation: document.getElementById('prompt').value
+                }
+            };
+
+            dataSources.push(dataSource);
+        }
+
+        // Do HTML encoding on given text
+        function htmlEncode(text) {
+            const entityMap = {
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;',
+              '/': '&#x2F;'
+            };
+
+            return String(text).replace(/[&<>"'\/]/g, (match) => entityMap[match]);
+        }
+
+        function handleUserQuery(userQuery, userQueryHTML, imgUrlPath) {
+            let contentMessage = userQuery;
+            if (imgUrlPath.trim()) {
+                contentMessage = [  
+                    { 
+                        "type": "text", 
+                        "text": userQuery 
+                    },
+                    { 
+                        "type": "image_url",
+                        "image_url": {
+                            "url": imgUrlPath
+                        }
+                    }
+                ];
+            }
+            let chatMessage = {
+                role: 'user',
+                content: contentMessage
+            };
+
+            messages.push(chatMessage);
+            let chatHistoryTextArea = document.getElementById('chatHistory');
+            
+            // Create a new message element for the doctor
+            const doctorMessage = document.createElement('div');
+            doctorMessage.className = 'chat-message doctor-message';
+            doctorMessage.textContent = userQuery;
+            chatHistoryTextArea.appendChild(doctorMessage);
+            
+            chatHistoryTextArea.scrollTop = chatHistoryTextArea.scrollHeight;
+
+            // Pause the timer while waiting for response
+            const wasMainTimerActive = isMainTimerActive;
+            if (wasMainTimerActive && !isPaused) {
+                pausedTime = totalTime;
+                clearInterval(timerInterval);
+            }
+
+            // For 'bring your data' scenario, chat API currently has long (4s+) latency
+            // We return some quick reply here before the chat API returns to mitigate.
+            if (dataSources.length > 0 && enableQuickReply) {
+                speak(getQuickReply(), 2000);
+            }
+
+            const azureOpenAIEndpoint = azureConfig.openAIEndpoint.value;
+            const azureOpenAIApiKey = azureConfig.openAIApiKey.value;
+            const azureOpenAIDeploymentName = DEFAULT_CONFIG.openAIDeploymentName;
+
+            let url = "{AOAIEndpoint}/openai/deployments/{AOAIDeployment}/chat/completions?api-version=2024-08-01-preview".replace("{AOAIEndpoint}", azureOpenAIEndpoint).replace("{AOAIDeployment}", azureOpenAIDeploymentName);
+            let body = JSON.stringify({
+                messages: messages,
+                stream: true
+            });
+
+            if (dataSources.length > 0) {
+                url = "{AOAIEndpoint}/openai/deployments/{AOAIDeployment}/extensions/chat/completions?api-version=2024-08-01-preview".replace("{AOAIEndpoint}", azureOpenAIEndpoint).replace("{AOAIDeployment}", azureOpenAIDeploymentName);
+                body = JSON.stringify({
+                    dataSources: dataSources,
+                    messages: messages,
+                    stream: true
+                });
+            }
+
+            let assistantReply = '';
+            let toolContent = '';
+            let displaySentence = '';
+
+            // Create a new message element for the simulator
+            const simulatorMessage = document.createElement('div');
+            simulatorMessage.className = 'chat-message simulator-message';
+            chatHistoryTextArea.appendChild(simulatorMessage);
+            
+            // Add a timeout to handle API request timeouts
+            const timeoutDuration = 20000; // 20 seconds timeout
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Request timed out')), timeoutDuration);
+            });
+
+            // Race between the fetch and the timeout
+            Promise.race([
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'api-key': azureOpenAIApiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: body
+                }),
+                timeoutPromise
+            ])
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Chat API response status: ${response.status} ${response.statusText}`);
+                }
+
+                let assistantReply = '';
+                let responseStarted = false;
+
+                const reader = response.body.getReader();
+                function read() {
+                    return reader.read().then(({ value, done }) => {
+                        if (done) {
+                            // When the response is complete, speak the entire text
+                            speak(assistantReply.trim());
+                            
+                            let assistantMessage = {
+                                role: 'assistant',
+                                content: assistantReply
+                            };
+                            messages.push(assistantMessage);
+                            
+                            return;
+                        }
+
+                        let chunk = new TextDecoder().decode(value);
+                        chunk.split('\n\n').forEach((line) => {
+                            if (line.startsWith('data:') && !line.endsWith('[DONE]')) {
+                                try {
+                                    const responseJson = JSON.parse(line.substring(5).trim());
+                                    if (responseJson.choices && responseJson.choices.length > 0) {
+                                        const choice = responseJson.choices[0];
+                                        if (choice.delta && choice.delta.content) {
+                                            // If this is the first content received, resume the timer
+                                            if (!responseStarted) {
+                                                responseStarted = true;
+                                                // Resume the timer if it was active before
+                                                if (wasMainTimerActive && !isPaused) {
+                                                    startMainTimer();
+                                                }
+                                            }
+                                            
+                                            assistantReply += choice.delta.content;
+                                            simulatorMessage.textContent += choice.delta.content;
+                                            chatHistoryTextArea.scrollTop = chatHistoryTextArea.scrollHeight;
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error(`Error parsing response: ${error}`);
+                                }
+                            }
+                        });
+
+                        return read();
+                    });
+                }
+
+                return read();
+            })
+            .catch(error => {
+                console.error("Error in fetch:", error);
+                
+                // Show error message to the user
+                simulatorMessage.innerHTML = `
+                    <div style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 4px;">
+                        <strong>Connection error:</strong> Unable to get a response from the AI. 
+                        <br>Please try refreshing the page and trying again.
+                        <br><button onclick="window.location.reload()" style="margin-top: 8px; padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh Page</button>
+                    </div>
+                `;
+                
+                // Resume timer if there was an error
+                if (wasMainTimerActive && !isPaused) {
+                    startMainTimer();
+                }
+            });
+        }
+
+        function getQuickReply() {
+            return quickReplies[Math.floor(Math.random() * quickReplies.length)];
+        }
+
+        // Update window.onload
+        window.onload = () => {
+            // Empty function since we don't need to hide configuration anymore
+        };
+
+        // Replace existing speak function
+        /**
+         * Speaks the given text. If another speech is in progress, queues the text.
+         * @param {string} text - The text to be spoken.
+         * @param {number} endingSilenceMs - Optional silence duration after speech.
+         */
+        function speak(text) {
+            if (!azureConfig) {
+                console.error("Azure configuration is not set.");
+                return;
+            }
+
+            // Get video elements
+            const idleVideo = document.getElementById('idleVideo');
+            const talkingVideo = document.getElementById('talkingVideo');
+
+            // Reset talking video but don't play it yet
+            talkingVideo.currentTime = 0;
+            
+            const ttsVoice = DEFAULT_CONFIG.ttsVoice;
+            const ssml = `
+                <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
+                    <voice name="${ttsVoice}">
+                        ${text}
+                    </voice>
+                </speak>`;
+
+            const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+                azureConfig.speechApiKey.value,
+                azureConfig.speechRegion.value
+            );
+
+            currentSynthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig, null);
+
+            currentSynthesizer.speakSsmlAsync(
+                ssml,
+                result => {
+                    if (result.reason === SpeechSDK.ResultReason.SynthesizingAudioCompleted) {
+                        const audioBlob = new Blob([result.audioData], { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+                        
+                        // Add event listener for when audio starts playing
+                        audio.onplay = () => {
+                            idleVideo.hidden = true;
+                            talkingVideo.hidden = false;
+                            const playPromise = talkingVideo.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(error => {
+                                    console.log("[DEBUG] Error playing talking video:", error);
+                                });
+                            }
+                        };
+                        
+                        audio.play();
+                        
+                        audio.onended = () => {
+                            talkingVideo.hidden = true;
+                            idleVideo.hidden = false;
+                            idleVideo.currentTime = 0;
+                            
+                            const idlePlayPromise = idleVideo.play();
+                            if (idlePlayPromise !== undefined) {
+                                idlePlayPromise.catch(error => {
+                                    console.log("[DEBUG] Error playing idle video:", error);
+                                });
+                            }
+                            
+                            URL.revokeObjectURL(audioUrl);
+                        };
+                    }
+                    
+                    currentSynthesizer.close();
+                    currentSynthesizer = null;
+                },
+                error => {
+                    console.error(`[DEBUG] Error during speech synthesis:`, error);
+                    idleVideo.hidden = false;
+                    talkingVideo.hidden = true;
+                    if (currentSynthesizer) {
+                        currentSynthesizer.close();
+                        currentSynthesizer = null;
+                    }
+                }
+            );
+        }
+
+        // Update stopSpeaking function
+        function stopSpeaking() {
+            //console.log("[DEBUG] stopSpeaking called");
+            // Close the current synthesizer if it's active
+            if (currentSynthesizer) {
+                currentSynthesizer.close();
+                currentSynthesizer = null;
+                //console.log("[DEBUG] Closed current synthesizer");
+            }
+
+            // Switch back to idle video when speech is stopped
+            document.getElementById('idleVideo').hidden = false;
+            document.getElementById('talkingVideo').hidden = true;
+            //console.log("[DEBUG] Switched back to idle video in stopSpeaking");
+        }
+
+        window.clearChatHistory = () => {
+            document.getElementById('chatHistory').innerHTML = '';
+            initMessages();
+        };
+
+        // Add this new function to handle sending messages
+        function sendUserMessage() {
+            const userMessageBox = document.getElementById('userMessageBox');
+            const userQuery = userMessageBox.textContent.trim();
+            if (userQuery !== '') {
+                handleUserQuery(userQuery, userQuery, '');
+                userMessageBox.innerHTML = '';
+                updateMicButton('mic'); // Reset to microphone icon after sending
+            }
+        }
+
+        // Modify the microphone function
+        window.microphone = async () => {
+            const micButton = document.getElementById('microphone');
+            const chatInputContainer = document.querySelector('.chat-input-container');
+            
+            // If there's text in the message box, handle it as a send action
+            const userMessageBox = document.getElementById('userMessageBox');
+            if (userMessageBox.textContent.trim()) {
+                sendUserMessage();
+                // Reset the button's dataset state after sending
+                micButton.dataset.state = '';
+                return;
+            }
+
+            try {
+                await navigator.mediaDevices.getUserMedia({ audio: true });
+            } catch (err) {
+                console.error("Microphone permission denied:", err);
+                alert("Please allow microphone access to use this feature.");
+                return;
+            }
+
+            // Initialize speech recognizer if it doesn't exist
+            if (!speechRecognizer) {
+                initSpeechRecognition();
+            }
+            
+            if (micButton.dataset.state === 'recording') {
+                // Stop recording and process speech
+                micButton.disabled = true;
+                chatInputContainer.classList.remove('recording'); // Remove recording class
+                speechRecognizer.stopContinuousRecognitionAsync(
+                    () => {
+                        const userQuery = micButton.dataset.pendingQuery;
+                        if (userQuery) {
+                            handleUserQuery(userQuery, userQuery, '');
+                            micButton.dataset.pendingQuery = '';
+                        }
+                        updateMicButton('mic');
+                        micButton.disabled = false;
+                        micButton.dataset.state = ''; // Reset the state
+                    },
+                    (err) => {
+                        console.log("Failed to stop continuous recognition:", err);
+                        micButton.disabled = false;
+                        updateMicButton('mic');
+                        micButton.dataset.state = ''; // Reset the state
+                    }
+                );
+                return;
+            }
+
+            micButton.dataset.state = 'recording';
+            chatInputContainer.classList.add('recording'); // Add recording class
+            updateMicButton('send');
+            
+            if (speechRecognizer) {
+                // Initialize the accumulated text
+                micButton.dataset.pendingQuery = '';
+                
+                speechRecognizer.recognized = async (s, e) => {
+                    if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+                        let userQuery = e.result.text.trim();
+                        if (userQuery === '') return;
+                        
+                        // Append the new recognized text to the existing pendingQuery with a space
+                        const currentText = micButton.dataset.pendingQuery || '';
+                        if (currentText) {
+                            micButton.dataset.pendingQuery = currentText + ' ' + userQuery;
+                        } else {
+                            micButton.dataset.pendingQuery = userQuery;
+                        }
+                        
+                        // Optionally, show the accumulated text somewhere in the UI
+                        // userMessageBox.textContent = micButton.dataset.pendingQuery;
+                    }
+                };
+                
+                // Add recognizing event to show interim results
+                speechRecognizer.recognizing = (s, e) => {
+                    if (e.result.text) {
+                        // You can display interim results here if desired
+                        // console.log(`Recognizing: ${e.result.text}`);
+                    }
+                };
+
+                speechRecognizer.startContinuousRecognitionAsync(
+                    () => {
+                        micButton.disabled = false;
+                    },
+                    (err) => {
+                        console.log("Failed to start continuous recognition:", err);
+                        micButton.disabled = false;
+                        updateMicButton('mic');
+                        micButton.dataset.state = ''; // Reset the state
+                    }
+                );
+            }
+        };
+
+        async function getEvaluationFromAI() {
+            // Convert HTML chat history to plain text before sending
+            const chatHistoryHTML = document.getElementById('chatHistory').innerHTML;
+            const chatHistoryPlain = chatHistoryHTML
+                .replace(/<div class="chat-message doctor-message">/g, "Doctor: ")
+                .replace(/<div class="chat-message simulator-message">/g, "Simulator: ")
+                .replace(/<\/div>/g, " | ")
+                .trim()
+                .replace(/\|\s*$/g, "");
+
+            // Check if chat history is empty
+            if (!chatHistoryPlain || chatHistoryPlain.trim() === '') {
+                alert('No chat history available to evaluate. Please complete a conversation first.');
+                return;
+            }
+
+            // Use the currentChecklist variable instead of localStorage
+            if (!currentChecklist) {
+                console.error("No checklist available for evaluation.");
+                return;
+            }
+
+            // Hide feedback popup if it's open
+            hideFeedbackPopup();
+
+            const button = document.getElementById('getEvaluationButton');
+            const container = document.getElementById('evaluationButtonContainer');
+            
+            // Disable the button during evaluation
+            button.style.display = 'none';
+            
+            // Create evaluating message
+            const evaluatingDiv = document.createElement('div');
+            evaluatingDiv.className = 'evaluation-message';
+            evaluatingDiv.innerHTML = `
+                <div>AI Examiner is evaluating your performance...</div>
+                <div class="evaluation-progress"></div>
+                <div class="evaluation-tips">
+                    <span id="evaluation-tip">Checking your data gathering skills...</span>
+                </div>
+            `;
+            container.appendChild(evaluatingDiv);
+            
+            // Cycle through different tips while waiting
+            const tips = [
+                "Checking your data gathering skills...",
+                "Analyzing your management plan...",
+                "Evaluating your interpersonal skills...",
+                "Comparing against PLAB 2 standards...",
+                "Looking for missed opportunities...",
+                "Identifying your strengths...",
+                "Almost there! Finalizing results..."
+            ];
+            
+            let tipIndex = 0;
+            const tipElement = document.getElementById('evaluation-tip');
+            const tipInterval = setInterval(() => {
+                tipIndex = (tipIndex + 1) % tips.length;
+                if (tipElement) {
+                    tipElement.textContent = tips[tipIndex];
+                }
+            }, 3000);
+
+            try {
+                // Check if checklist is available
+                if (!currentChecklist || !Array.isArray(currentChecklist) || currentChecklist.length === 0) {
+                    console.error("No checklist available for evaluation.");
+                    clearInterval(tipInterval);
+                    evaluatingDiv.innerHTML = 'Error: No checklist available for this case. Please try another case.';
+                    return;
+                }
+
+                const payload = {
+                    messages: [
+                        {
+                            role: "system",
+                            content: `You are a helpful assistant that evaluates chat history against a checklist. You will mark the checklist based on the chat history provided.
+
+The JSON format should look like this:
+{
+  "Checklist": [
+    {
+      "Domain": "Data Gathering",
+      "Point": "Confirm patient identifiers: Catherine Malton's full name, age, and relation to the caller.",
+      "Completed": true/false
+    },
+    ...
+  ]
+}
+
+Please fill in the "Completed" field for each checklist item based on the chat history. Your response must be valid JSON and nothing else meaning no trailing text or markdown code blocks.`
+                        },
+                        {
+                            role: "user",
+                            content: `Chat History: ${chatHistoryPlain}\n\nChecklist: ${JSON.stringify(currentChecklist)}`
+                        }
+                    ],
+                    temperature: 0,
+                    top_p: 1,
+                    max_tokens: 16384,
+                    response_format: { "type": "json_object" }
+                };
+
+                const headers = {
+                    "Content-Type": "application/json",
+                    "api-key": azureConfig.openAIApiKey.value
+                };
+
+                const endpoint = `${azureConfig.openAIEndpoint.value}/openai/deployments/gpt-4o2/chat/completions?api-version=2024-02-15-preview`;
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to get evaluation from AI: ${response.statusText}`);
+                }
+
+                const responseData = await response.json();
+                
+                // Send the evaluation result back to the parent context
+                window.parent.postMessage({
+                    type: 'evaluationResult',
+                    result: responseData.choices[0].message.content
+                }, '*');
+
+                // After successful evaluation, show completion message
+                clearInterval(tipInterval);
+                evaluatingDiv.innerHTML = `
+                    <div>✅ Evaluation complete!</div>
+                    <div>Loading your performance results...</div>
+                    <div class="evaluation-progress"></div>
+                `;
+                
+                // Add a small delay to show the completion message before results appear
+                setTimeout(() => {
+                    showPerformanceLightbox(true);
+                }, 1500);
+                
+            } catch (error) {
+                console.error("Error during AI evaluation:", error);
+                // Show error message if evaluation fails
+                clearInterval(tipInterval);
+                evaluatingDiv.innerHTML = `
+                    <div>❌ Evaluation failed</div>
+                    <div>Please try again or contact support if the problem persists.</div>
+                    <button onclick="getEvaluationFromAI()" class="reveal-findings-button" style="margin-top: 15px;">
+                        Try Again
+                    </button>
+                `;
+            }
+        }
+
+    /* -----------------------------------------
+       Timer Widget Functions
+    ----------------------------------------- */
+    var timerInterval, flashInterval, totalTime = 90, mainTimerTime = 480, pausedTime = 0;
+    var isRunning = false, isMainTimerActive = false, hasMainTimerStarted = false;
+    function initializeTimer() {
+      var timeDisplay = document.getElementById('time');
+      var timerWidget = document.getElementById('timerWidget');
+      var readingTimeLabel = document.getElementById('readingTimeLabel');
+      timerWidget.classList.add('minimized');
+
+      // Add click handler to toggle minimized state
+      timerWidget.addEventListener('click', function() {
+        this.classList.toggle('minimized');
+      });
+    }
+
+    function startPreliminaryTimer() {
+      totalTime = 90;
+      isMainTimerActive = false;
+      // Make timer visible when starting
+      document.getElementById('timerWidget').classList.remove('minimized');
+      timerInterval = setInterval(function() {
+        updateTimerDisplay(--totalTime);
+        if (totalTime <= 0) {
+          clearInterval(timerInterval);
+          // Automatically transition to consultation screen
+          document.getElementById('caseInfoState').classList.add('hidden');
+          document.getElementById('consultationState').classList.remove('hidden');
+          startMainTimer();
+        }
+      }, 1000);
+      playAudio('https://rohityenukoti.github.io/plab2timer/begin.mp3');
+    }
+
+    function startMainTimer() {
+      totalTime = (pausedTime > 0 ? pausedTime : mainTimerTime);
+      pausedTime = 0;
+      isMainTimerActive = true;
+      document.getElementById('readingTimeLabel').textContent = 'Consultation Time';
+      updateTimerDisplay(totalTime);
+      updateVisualIndicator();
+      // Clear any existing interval before starting a new one
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(updateMainTimer, 1000);
+      if (!hasMainTimerStarted) {
+        playAudio('https://rohityenukoti.github.io/plab2timer/Enter_room.mp3');
+        hasMainTimerStarted = true;
+      }
+    }
+
+    function updateMainTimer() {
+      if (!isMainTimerActive) return; // Add guard clause
+      totalTime--;
+      updateTimerDisplay(totalTime);
+      updateVisualIndicator();
+      updateSections();
+      if (totalTime <= 0) {
+        clearInterval(timerInterval);
+        // Call endSessionWithFeedback instead of endSessionAndResetTimer
+        endSessionWithFeedback();
+      }
+    }
+
+    function updateTimerDisplay(time) {
+      var minutes = Math.floor(time / 60);
+      var seconds = time % 60;
+      document.getElementById('time').textContent = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+    }
+
+    function updateVisualIndicator() {
+      var timerWidget = document.getElementById('timerWidget');
+      if (totalTime === 240) {
+        timerWidget.style.borderColor = 'lightgreen';
+      } else if (totalTime <= 120) {
+        flashTimer();
+        if (totalTime === 120) {
+          playAudio('https://rohityenukoti.github.io/plab2timer/2minutewarning.mp3');
+        } else if (totalTime === 1) {
+          playAudio('https://rohityenukoti.github.io/plab2timer/ending.mp3');
+        }
+      } else if (totalTime > 240) {
+        timerWidget.style.borderColor = 'rgb(173, 216, 230)';
+      }
+    }
+
+    function updateSections() {
+      if (isMainTimerActive) {
+        var elapsedTime = 480 - totalTime;
+        var activeSection = Math.floor(elapsedTime / 30) + 1;
+        activeSection = Math.min(activeSection, 16);
+        window.parent.postMessage({type: 'updateActiveSection', section: activeSection}, '*');
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      clearInterval(flashInterval);
+      flashInterval = null;
+      timerInterval = null;
+      totalTime = 90;
+      mainTimerTime = 480;
+      pausedTime = 0;
+      updateTimerDisplay(totalTime);
+      document.getElementById('readingTimeLabel').textContent = 'Reading Time';
+      document.getElementById('timerWidget').style.borderColor = 'rgba(255, 255, 255, 0.9)';
+      isRunning = false;
+      isMainTimerActive = false;
+      hasMainTimerStarted = false;
+      window.parent.postMessage({type: 'resetSections'}, '*');
+    }
+
+    function flashTimer() {
+      var timerWidget = document.getElementById('timerWidget');
+      if (!flashInterval) {
+        flashInterval = setInterval(() => {
+          timerWidget.style.borderColor = (timerWidget.style.borderColor === 'rgba(255, 255, 255, 0.9)') ? '#ffa500' : 'rgba(255, 255, 255, 0.9)';
+        }, 500);
+      }
+    }
+
+    function playAudio(url) {
+      var audio = new Audio(url);
+      audio.play();
+    }
+
+    function setActionButtonIcon(action) {
+      const iconSVG = action === 'play' 
+            ? '<polygon points="5 3 19 12 5 21 5 3"></polygon>' 
+            : '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+      document.getElementById('actionBtn').innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSVG}</svg>`;
+    }
+
+    /* -----------------------------------------
+       Tree View Functionality
+    ----------------------------------------- */
+    class TreeView {
+      constructor(element) {
+        this.element = element;
+        this.data = null;
+        this.currentTopic = null;
+        this.highlightedPath = null;
+        this.mode = 'review';
+      }
+      setData(data) {
+        this.data = data;
+        this.render();
+      }
+      updateTopic(topic, newData) {
+        const topicItem = this.findTopicItem(this.data, topic);
+        if (topicItem) {
+          topicItem.children = this.addOpenStateToItems(newData);
+          topicItem.open = true;
+          topicItem.loading = false;
+          this.currentTopic = topic;
+          this.render();
+        }
+      }
+      addOpenStateToItems(items) {
+        return items.map(item => ({
+          ...item,
+          open: false,
+          loading: false,
+          children: item.children ? this.addOpenStateToItems(item.children) : null
+        }));
+      }
+      findTopicItem(items, topic) {
+        for (let item of items) {
+          if (item.id === topic) return item;
+        }
+        return null;
+      }
+      render() {
+        this.element.innerHTML = this.renderTree(this.data);
+        this.addEventListeners();
+      }
+      renderTree(items) {
+        if (!items) return '';
+        return items.map(item => this.renderItem(item)).join('');
+      }
+      renderItem(item) {
+        const isHighlighted = this.isItemHighlighted(item);
+        const highlightClass = isHighlighted ? 'highlighted' : '';
+        const lockedClass = item.locked ? 'locked' : '';
+        const loadingIcon = item.loading ? '<div class="loading-icon"></div>' : '';
+        if (item.type === 'caseName') {
+          const displayName = this.mode === 'practice' ? this.maskCaseName(item) : item.name;
+          return `<div class="case-item ${highlightClass}" data-id="${item.id}">
+                    <span>${displayName}</span>
+                    ${item.hasResponse ? '<span class="tick-mark">✓</span>' : ''}${loadingIcon}
+                  </div>`;
+        }
+        const isOpen = item.open || (item.id === this.currentTopic);
+        const childrenContent = item.children ? this.renderTree(item.children) : '';
+        const hasChildren = item.children && item.children.length > 0;
+        return `<div class="tree-item ${isOpen ? 'open' : ''}" data-id="${item.id}">
+                  <div class="tree-item-header ${highlightClass} ${lockedClass}">
+                    ${hasChildren ? `<svg class="tree-item-icon" viewBox="0 0 24 24">
+                                       <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                                     </svg>` : ''}
+                    ${item.name}
+                    ${item.locked ? `<svg class="lock-icon" viewBox="0 0 24 24">
+                                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                                      </svg>` : ''}
+                    ${loadingIcon}
+                  </div>
+                  ${hasChildren ? `<div class="tree-item-content">${childrenContent}</div>` : ''}
+                </div>`;
+      }
+      maskCaseName(item) {
+        return `Case ${item.caseUID}`;
+      }
+      isItemHighlighted(item) {
+        if (!this.highlightedPath) return false;
+        const [highlightedTopic, highlightedCategory, highlightedSubCategory, highlightedCase] = this.highlightedPath;
+        switch (item.type) {
+          case 'topic':
+            return item.id === highlightedTopic;
+          case 'category':
+            return item.id === `${highlightedTopic}:${highlightedCategory}`;
+          case 'subCategory':
+            return item.id === `${highlightedTopic}:${highlightedCategory}:${highlightedSubCategory}`;
+          case 'caseName':
+            return item.id === `caseName:${highlightedCase}`;
+          default:
+            return false;
+        }
+      }
+      addEventListeners() {
+        this.element.querySelectorAll('.tree-item-header').forEach(header => {
+          header.addEventListener('click', (e) => {
+            const item = header.closest('.tree-item');
+            const id = item.dataset.id;
+            
+            // If item is locked, return early
+            if (header.classList.contains('locked')) {
+                return;
+            }
+
+            // Toggle the open state for the clicked item
+            item.classList.toggle('open');
+
+            // Only trigger topic/category selection if the item doesn't have children
+            // or if it's a topic-level item that needs to load its children
+            const hasChildren = header.nextElementSibling && 
+                              header.nextElementSibling.classList.contains('tree-item-content');
+            
+            if (!hasChildren || id.split(':').length === 1) {
+                window.parent.postMessage({ type: 'topicSelected', topicId: id }, '*');
+            }
+          });
+        });
+        this.element.querySelectorAll('.case-item').forEach(caseItem => {
+          caseItem.addEventListener('click', (e) => {
+            const caseId = caseItem.dataset.id;
+            // First restart the session
+            if (typeof window.restartSession === 'function') {
+                window.restartSession();
+            }
+            // Add loading state
+            this.setItemLoading(caseId, true);
+            // Send message to parent
+            window.parent.postMessage({ type: 'caseSelected', caseName: caseId }, '*');
+          });
+        });
+      }
+      toggleItemOpen(items, id, isTopic) {
+        for (let item of items) {
+          if (item.id === id) {
+            item.open = !item.open;
+            return true;
+          }
+          if (item.children && this.toggleItemOpen(item.children, id, false)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      setItemLoading(id, isLoading) {
+        const caseItem = this.element.querySelector(`[data-id="${id}"]`);
+        if (caseItem) {
+            if (isLoading) {
+                caseItem.classList.add('loading');
+            } else {
+                caseItem.classList.remove('loading');
+            }
+        }
+      }
+      onTopicSelected(topicId) {
+        window.parent.postMessage({ type: 'topicSelected', topicId: topicId }, '*');
+      }
+      onCaseSelected(caseName) {
+        // First restart the session
+        if (typeof window.restartSession === 'function') {
+            window.restartSession();
+        }
+        // Then send the case selection message
+        window.parent.postMessage({ type: 'caseSelected', caseName: caseName }, '*');
+      }
+      highlightCase(topic, category, subCategory, caseName) {
+        if (topic || category || subCategory || caseName) {
+          this.highlightedPath = [topic, category, subCategory, caseName];
+        } else {
+          this.highlightedPath = null;
+        }
+        if (this.data) {
+          this.render();
+        }
+      }
+      setMode(mode) {
+        this.mode = mode;
+        this.render();
+      }
+    }
+    const treeView = new TreeView(document.getElementById('treeView'));
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'setData') {
+        treeView.setData(event.data.data);
+      } else if (event.data.type === 'updateTopic') {
+        treeView.updateTopic(event.data.topic, event.data.data);
+      } else if (event.data.type === 'highlightCase') {
+        treeView.highlightCase(event.data.topic, event.data.category, event.data.subCategory, event.data.caseName);
+      } else if (event.data.type === 'setMode') {
+        treeView.setMode(event.data.mode);
+      } else if (event.data.type === 'setLoading') {
+        // Add handler for loading state
+        treeView.setItemLoading(event.data.caseId, event.data.isLoading);
+      }
+    }, false);
+
+    /* Initialize Timer after content loads */
+    document.addEventListener('DOMContentLoaded', initializeTimer);
+
+    /* --------------------------------------------------
+       Functions to update the new UI sections 
+    -------------------------------------------------- */
+    function updateCaseInformationUI(caseData) {
+        const info = caseData.candidateInfo && caseData.candidateInfo.candidateInfo ? caseData.candidateInfo.candidateInfo[0] : {};
+        
+        // Update reading time view (without findings)
+        const readingElements = {
+            whereAreYou: document.getElementById('whereAreYou'),
+            whoYourPatientIs: document.getElementById('whoYourPatientIs'),
+            otherInformation: document.getElementById('otherInformation'),
+            whatYouMustDo: document.getElementById('whatYouMustDo'),
+            specialNote: document.getElementById('specialNote')
+        };
+
+        // Update consultation view (with findings)
+        const consultationElements = {
+            whereAreYou: document.getElementById('whereAreYou-sidebar'),
+            whoYourPatientIs: document.getElementById('whoYourPatientIs-sidebar'),
+            otherInformation: document.getElementById('otherInformation-sidebar'),
+            whatYouMustDo: document.getElementById('whatYouMustDo-sidebar'),
+            specialNote: document.getElementById('specialNote-sidebar'),
+            findingsImage: document.getElementById('findingsImage-sidebar'),
+            findingsText: document.getElementById('findingsText-sidebar')
+        };
+
+        // Update reading time elements if they exist
+        Object.entries(readingElements).forEach(([key, element]) => {
+            if (element) {
+                element.textContent = info[key] || '';
+            }
+        });
+
+        // Update consultation elements if they exist
+        Object.entries(consultationElements).forEach(([key, element]) => {
+            if (element) {
+                if (key === 'findingsImage') {
+                    if (caseData.findingsImage) {
+                        element.src = caseData.findingsImage;
+                        element.style.display = 'block';
+                    } else {
+                        element.style.display = 'none';
+                    }
+                } else if (key === 'findingsText') {
+                    element.innerHTML = caseData.findingsText || '';
+                } else {
+                    element.textContent = info[key] || '';
+                }
+            }
+        });
+    }
+
+    function updateTimestampsUI(caseName, options) {
+      var selector = document.getElementById('timestampSelector');
+      selector.innerHTML = '';
+      options.forEach(function(opt) {
+        var optionEl = document.createElement('option');
+        optionEl.value = opt.value;
+        optionEl.textContent = opt.label;
+        selector.appendChild(optionEl);
+      });
+      // Optionally assign an onchange handler to send messages when the timestamp changes.
+      selector.onchange = function() {
+        // You could send the new selection back to the parent if needed.
+        // e.g., window.parent.postMessage({ type: 'timestampChanged', value: this.value, caseName: caseName }, '*');
+      };
+    }
+
+    function clearTimestampsUI() {
+      document.getElementById('timestampSelector').innerHTML = '';
+    }
+
+    function displayResultsUI(results) {
+        function createResultSection(title, data) {
+            // Add emojis based on the section title
+            let titleWithEmoji;
+            switch(title) {
+                case 'Data Gathering':
+                    titleWithEmoji = '📊 Data Gathering';
+                    break;
+                case 'Management':
+                    titleWithEmoji = '🎯 Management';
+                    break;
+                case 'Interpersonal Skills':
+                    titleWithEmoji = '🤝 Interpersonal Skills';
+                    break;
+                default:
+                    titleWithEmoji = title;
+            }
+
+            return `
+                <div class="evaluation-section">
+                    <h3>${titleWithEmoji}</h3>
+                    <div class="evaluation-grid">
+                        <div class="evaluation-column covered-column">
+                            <div class="column-header">Covered</div>
+                            ${createHTMLList(data.covered, '✅')}
+                        </div>
+                        <div class="evaluation-column missed-column">
+                            <div class="column-header">Missed</div>
+                            ${createHTMLList(data.missed, '❌')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createHTMLList(items, emoji) {
+            if (items.length === 0) return "<p>None</p>";
+            return items.map(item => `<div style="margin-bottom: 0.5em">${emoji} ${item}</div>`).join("");
+        }
+
+        const evaluationResults = document.getElementById('evaluationResults');
+        evaluationResults.innerHTML = `
+            <h2>Evaluation Results</h2>
+            ${createResultSection('Data Gathering', results.dataGathering)}
+            ${createResultSection('Management', results.management)}
+            ${createResultSection('Interpersonal Skills', results.interpersonalSkills)}
+        `;
+    }
+
+    function closeCaseSelectionModal() {
+      document.getElementById('caseSelectionModal').style.display = 'none';
+      // Optionally, send a message back if necessary:
+      // window.parent.postMessage({ type: 'closeCaseSelection' }, '*');
+    }
+
+    // Add these functions to handle the modal visibility
+    function showCaseSelectionModal() {
+      document.getElementById('treeViewContainer').style.display = 'block';
+      document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    function hideCaseSelectionModal() {
+      document.getElementById('treeViewContainer').style.display = 'none';
+      document.getElementById('modalOverlay').style.display = 'none';
+    }
+
+    // Modify the event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // ... existing initialization code ...
+
+      // Add click handlers for the case selection button and close button
+      document.getElementById('openCaseSelectionButton').addEventListener('click', showCaseSelectionModal);
+      document.getElementById('closeCaseSelection').addEventListener('click', hideCaseSelectionModal);
+      document.getElementById('modalOverlay').addEventListener('click', hideCaseSelectionModal);
+
+      const userMessageBox = document.getElementById('userMessageBox');
+      const micButton = document.getElementById('microphone');
+
+      // Handle input in the message box
+      userMessageBox.addEventListener('input', function() {
+        if (this.textContent.trim()) {
+          updateMicButton('send');
+        } else {
+          updateMicButton('mic');
+        }
+      });
+
+      // Handle keypress in the message box
+      userMessageBox.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (this.textContent.trim()) {
+            sendUserMessage();
+          }
+        }
+      });
+
+      const tooltip = micButton.parentElement.querySelector('.tooltip');
+
+      micButton.addEventListener('click', function() {
+        if (!hasUsedMic) {
+            hasUsedMic = true;
+            // Don't hide tooltip yet, it will show the send tooltip
+        } else if (!hasUsedSend) {
+            hasUsedSend = true;
+            tooltip.style.opacity = '0'; // Hide tooltip after send is clicked
+        }
+      });
+
+      // Add reveal findings functionality
+      const revealFindingsButton = document.getElementById('revealFindings');
+      const toggleFindingsIcon = document.getElementById('toggleFindings');
+      const findingsText = document.getElementById('findingsText-sidebar');
+      const findingsImage = document.getElementById('findingsImage-sidebar');
+
+      if (revealFindingsButton && toggleFindingsIcon) {
+          revealFindingsButton.addEventListener('click', function() {
+              findingsText.classList.remove('hidden');
+              findingsImage.classList.remove('hidden');
+              revealFindingsButton.style.display = 'none';
+              toggleFindingsIcon.style.display = 'block';
+          });
+
+          toggleFindingsIcon.addEventListener('click', function() {
+              findingsText.classList.add('hidden');
+              findingsImage.classList.add('hidden');
+              revealFindingsButton.style.display = 'block';
+              toggleFindingsIcon.style.display = 'none';
+          });
+      }
+    });
+
+    // Add missing htmlEncode function
+    function htmlEncode(text) {
+        const entityMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '/': '&#x2F;'
+        };
+        return String(text).replace(/[&<>"'\/]/g, (match) => entityMap[match]);
+    }
+
+    // Add missing setDataSources function
+    function setDataSources(azureCogSearchEndpoint, azureCogSearchApiKey, azureCogSearchIndexName) {
+        let dataSource = {
+            type: 'AzureCognitiveSearch',
+            parameters: {
+                endpoint: azureCogSearchEndpoint,
+                key: azureCogSearchApiKey,
+                indexName: azureCogSearchIndexName,
+                semanticConfiguration: '',
+                queryType: 'simple',
+                fieldsMapping: {
+                    contentFieldsSeparator: '\n',
+                    contentFields: ['content'],
+                    filepathField: null,
+                    titleField: 'title',
+                    urlField: null
+                },
+                inScope: true,
+                roleInformation: document.getElementById('prompt').value
+            }
+        };
+        dataSources.push(dataSource);
+    }
+
+    // Add tab functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const beginReadingButton = document.getElementById('beginReadingButton');
+        const enterRoomButton = document.getElementById('enterRoomButton');
+        const initialState = document.getElementById('initialState');
+        const caseInfoState = document.getElementById('caseInfoState');
+        const consultationState = document.getElementById('consultationState');
+
+        // Function to reset findings state
+        function resetFindingsState() {
+            const findingsText = document.getElementById('findingsText-sidebar');
+            const findingsImage = document.getElementById('findingsImage-sidebar');
+            const revealButton = document.getElementById('revealFindings');
+            const toggleIcon = document.getElementById('toggleFindings');
+            
+            if (findingsText) findingsText.classList.add('hidden');
+            if (findingsImage) findingsImage.classList.add('hidden');
+            if (revealButton) revealButton.style.display = 'block';
+            if (toggleIcon) toggleIcon.style.display = 'none';
+        }
+
+        beginReadingButton.addEventListener('click', function() {
+            initialState.classList.add('hidden');
+            caseInfoState.classList.remove('hidden');
+            // Start the reading timer
+            startPreliminaryTimer();
+        });
+
+        enterRoomButton.addEventListener('click', function() {
+            caseInfoState.classList.add('hidden');
+            consultationState.classList.remove('hidden');
+            // Reset findings state when entering room
+            resetFindingsState();
+            // Start the main timer
+            startMainTimer();
+            // Start the session to enable microphone
+            startSession();
+        });
+
+        // Modify the resetTimer function to reset the UI state
+        const originalResetTimer = resetTimer;
+        resetTimer = function() {
+            originalResetTimer();
+            consultationState.classList.add('hidden');
+            caseInfoState.classList.add('hidden');
+            initialState.classList.remove('hidden');
+            // Reset findings state when resetting timer
+            resetFindingsState();
+        };
+    });
+
+    // Add this new function to update the microphone/send button
+    function updateMicButton(type) {
+        const button = document.getElementById('microphone');
+        const tooltip = button.parentElement.querySelector('.tooltip');
+        
+        if (type === 'send') {
+            button.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            `;
+            if (!hasUsedSend) {
+                tooltip.textContent = 'Click to send the message';
+                tooltip.style.opacity = '1';
+            }
+        } else {
+            button.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path class="mic-icon" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path class="mic-icon" d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line class="mic-icon" x1="12" y1="19" x2="12" y2="23"></line>
+                    <line class="mic-icon" x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+            `;
+            if (!hasUsedMic) {
+                tooltip.textContent = 'Click here and speak clearly';
+                tooltip.style.opacity = '1';
+            }
+        }
+    }
+
+    // Add this new function
+    function endSessionAndResetTimer() {
+        // Reset timer without UI changes
+        clearInterval(timerInterval);
+        clearInterval(flashInterval);
+        flashInterval = null;
+        timerInterval = null;
+        totalTime = 90;
+        mainTimerTime = 480;
+        pausedTime = 0;
+        updateTimerDisplay(totalTime);
+        document.getElementById('readingTimeLabel').textContent = 'Reading Time';
+        document.getElementById('timerWidget').style.borderColor = 'rgba(255, 255, 255, 0.9)';
+        isRunning = false;
+        isMainTimerActive = false;
+        hasMainTimerStarted = false;
+        window.parent.postMessage({type: 'resetSections'}, '*');
+        
+        // Hide buttons and input bar
+        document.getElementById('endSession').style.display = 'none';
+        document.getElementById('pauseResumeSession').style.display = 'none';
+        document.querySelector('.chat-input-container').style.display = 'none';
+        
+        // Call the original stopSession function
+        window.stopSession();
+        
+        // Show the evaluation button container
+        document.getElementById('evaluationButtonContainer').style.display = 'block';
+        
+        // Make sure the evaluation button is visible and any previous evaluation message is removed
+        const evaluationButtonContainer = document.getElementById('evaluationButtonContainer');
+        if (evaluationButtonContainer) {
+            // Remove any existing evaluation message
+            const evaluationMessage = evaluationButtonContainer.querySelector('.evaluation-message');
+            if (evaluationMessage) {
+                evaluationMessage.remove();
+            }
+            
+            // Make sure the button is visible
+            const evaluationButton = document.getElementById('getEvaluationButton');
+            if (evaluationButton) {
+                evaluationButton.style.display = 'block';
+            }
+        }
+    }
+
+    // Add this new function for ending session with feedback
+    function endSessionWithFeedback() {
+        endSessionAndResetTimer();
+        showFeedbackPopup();
+    }
+
+    // Add this new function near the other session management functions
+    function restartSession() {
+        // End current session without feedback
+        endSessionAndResetTimer();
+        
+        // Reset UI to initial state
+        document.getElementById('consultationState').classList.add('hidden');
+        document.getElementById('caseInfoState').classList.add('hidden');
+        document.getElementById('initialState').classList.remove('hidden');
+        
+        // Clear chat history
+        document.getElementById('chatHistory').innerHTML = '';
+        initMessages();
+        
+        // Reset microphone button state and message box
+        updateMicButton('mic');
+        document.getElementById('microphone').disabled = true;
+        document.getElementById('userMessageBox').hidden = true;  // Hide during reset
+        
+        // Hide evaluation button if visible
+        document.getElementById('evaluationButtonContainer').style.display = 'none';
+    }
+
+    // Add togglePauseSession function
+    window.togglePauseSession = function() {
+        const pauseResumeButton = document.getElementById('pauseResumeSession');
+        
+        if (!isPaused) {
+            // Pause the session
+            isPaused = true;
+            pausedTime = totalTime;
+            clearInterval(timerInterval);
+            pauseResumeButton.innerHTML = '▶️ Resume';
+            
+            // Disable microphone while paused
+            document.getElementById('microphone').disabled = true;
+            document.getElementById('userMessageBox').contentEditable = false;
+        } else {
+            // Resume the session
+            isPaused = false;
+            pauseResumeButton.innerHTML = '⏸️ Pause';
+            
+            // Re-enable microphone
+            document.getElementById('microphone').disabled = false;
+            document.getElementById('userMessageBox').contentEditable = true;
+            
+            // Resume timer from where it was paused
+            if (isMainTimerActive) {
+                startMainTimer();
+            } else {
+                startPreliminaryTimer();
+            }
+        }
+    };
+
+    // Add event listener for timestamp selector
+    document.getElementById('timestampSelector').addEventListener('change', function(e) {
+        const selectedIndex = e.target.value;
+        // Post message to parent to load answers for selected timestamp
+        window.parent.postMessage({
+            type: 'timestampChanged',
+            index: selectedIndex
+        }, '*');
+    });
+
+    // Add these functions after your existing JavaScript
+    function openPerformanceLightbox() {
+        document.getElementById('performanceLightbox').style.display = 'block';
+    }
+
+    function closePerformanceLightbox() {
+        document.getElementById('performanceLightbox').style.display = 'none';
+    }
+
+    // Update your DOMContentLoaded event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... existing initialization code ...
+
+        // Add performance button click handler
+        document.getElementById('openPerformanceButton').addEventListener('click', openPerformanceLightbox);
+
+        // Close performance lightbox when clicking outside
+        document.getElementById('performanceLightbox').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePerformanceLightbox();
+            }
+        });
+    });
+
+    // Add this to your existing DOMContentLoaded event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... existing initialization code ...
+
+        // Add hamburger menu functionality
+        const hamburgerMenu = document.querySelector('.hamburger-menu');
+        const mobileMenu = document.querySelector('.mobile-menu');
+
+        hamburgerMenu.addEventListener('click', function() {
+            mobileMenu.classList.toggle('active');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!hamburgerMenu.contains(e.target) && !mobileMenu.contains(e.target)) {
+                mobileMenu.classList.remove('active');
+            }
+        });
+
+        // Add event listeners for mobile buttons
+        document.getElementById('openCaseSelectionButton-mobile').addEventListener('click', function() {
+            showCaseSelectionModal();
+            mobileMenu.classList.remove('active');
+        });
+
+        document.getElementById('openPerformanceButton-mobile').addEventListener('click', function() {
+            openPerformanceLightbox();
+            mobileMenu.classList.remove('active');
+        });
+    });
+
+    // Add this to ensure hamburger menu works on mobile
+    function setupMobileMenu() {
+        const mediaQuery = window.matchMedia('(max-width: 768px)');
+        const hamburgerMenu = document.querySelector('.hamburger-menu');
+        const mobileMenu = document.querySelector('.mobile-menu');
+        
+        function handleScreenChange(e) {
+            if (e.matches) {
+                // Mobile view
+                hamburgerMenu.style.display = 'block';
+                document.querySelector('.left-buttons').style.display = 'none';
+                document.querySelector('.right-buttons').style.display = 'none';
+            } else {
+                // Desktop view
+                hamburgerMenu.style.display = 'none';
+                document.querySelector('.left-buttons').style.display = 'flex';
+                document.querySelector('.right-buttons').style.display = 'flex';
+                mobileMenu.classList.remove('active');
+            }
+        }
+        
+        // Initial check
+        handleScreenChange(mediaQuery);
+        
+        // Add listener for changes
+        mediaQuery.addEventListener('change', handleScreenChange);
+        
+        // Toggle mobile menu when hamburger is clicked
+        hamburgerMenu.addEventListener('click', function() {
+            //console.log('Hamburger clicked');
+            mobileMenu.classList.toggle('active');
+            
+            // Force display style to ensure visibility
+            if (mobileMenu.classList.contains('active')) {
+                mobileMenu.style.display = 'block';
+            } else {
+                mobileMenu.style.display = 'none';
+            }
+        });
+    }
+    
+    // Run setup when DOM is loaded
+    document.addEventListener('DOMContentLoaded', setupMobileMenu);
+    
+    // Also add the event listener directly in case DOMContentLoaded already fired
+    window.addEventListener('load', function() {
+        const hamburgerMenu = document.querySelector('.hamburger-menu');
+        const mobileMenu = document.querySelector('.mobile-menu');
+        
+        if (hamburgerMenu && mobileMenu) {
+            hamburgerMenu.addEventListener('click', function() {
+                //console.log('Hamburger clicked (from load event)');
+                mobileMenu.classList.toggle('active');
+                
+                // Force display style to ensure visibility
+                if (mobileMenu.classList.contains('active')) {
+                    mobileMenu.style.display = 'block';
+                } else {
+                    mobileMenu.style.display = 'none';
+                }
+            });
+        }
+    });
+
+    function displayResults(results) {
+        // Update each section's content
+        document.getElementById('dataGatheringCovered').innerHTML = 
+            `<ul>${results.dataGathering.covered.map(point => `<li>${point}</li>`).join('')}</ul>`;
+        document.getElementById('dataGatheringMissed').innerHTML = 
+            `<ul>${results.dataGathering.missed.map(point => `<li>${point}</li>`).join('')}</ul>`;
+        document.getElementById('managementCovered').innerHTML = 
+            `<ul>${results.management.covered.map(point => `<li>${point}</li>`).join('')}</ul>`;
+        document.getElementById('managementMissed').innerHTML = 
+            `<ul>${results.management.missed.map(point => `<li>${point}</li>`).join('')}</ul>`;
+        document.getElementById('interpersonalSkillsCovered').innerHTML = 
+            `<ul>${results.interpersonalSkills.covered.map(point => `<li>${point}</li>`).join('')}</ul>`;
+        document.getElementById('interpersonalSkillsMissed').innerHTML = 
+            `<ul>${results.interpersonalSkills.missed.map(point => `<li>${point}</li>`).join('')}</ul>`;
+    }
+
+    // Add this new function to show the performance lightbox
+    function showPerformanceLightbox(autoSelectLatest = false) {
+        const performanceLightbox = document.getElementById('performanceLightbox');
+        performanceLightbox.style.display = 'block';
+        
+        // Clean up the evaluation message when showing the performance lightbox
+        const evaluationButtonContainer = document.getElementById('evaluationButtonContainer');
+        if (evaluationButtonContainer) {
+            // Remove any evaluation message
+            const evaluationMessage = evaluationButtonContainer.querySelector('.evaluation-message');
+            if (evaluationMessage) {
+                evaluationMessage.remove();
+            }
+            // We'll keep the button hidden as requested
+        }
+        
+        if (autoSelectLatest) {
+            // Select the most recent timestamp (last in the list)
+            const timestampSelector = document.getElementById('timestampSelector');
+            if (timestampSelector && timestampSelector.options.length > 0) {
+                const lastIndex = timestampSelector.options.length - 1; // Get the last index
+                timestampSelector.selectedIndex = lastIndex;
+                
+                // Trigger the change event with the last index
+                window.parent.postMessage({
+                    type: 'timestampChanged',
+                    index: lastIndex
+                }, '*');
+            }
+        }
+    }
+
+    // Add this after your other event listeners
+    document.addEventListener('click', function(event) {
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const hamburgerMenu = document.querySelector('.hamburger-menu');
+        
+        // If the click is outside both the mobile menu and hamburger button
+        if (!mobileMenu.contains(event.target) && !hamburgerMenu.contains(event.target)) {
+            mobileMenu.classList.remove('active');
+        }
+    });
+
+    // Update the hamburger menu click handler to use stopPropagation
+    document.querySelector('.hamburger-menu').addEventListener('click', function(event) {
+        event.stopPropagation(); // Prevent the document click handler from firing
+        const mobileMenu = document.querySelector('.mobile-menu');
+        mobileMenu.classList.toggle('active');
+    });
+
+    // Add this function to initialize the mobile menu functionality
+    function initializeMobileMenu() {
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const hamburgerMenu = document.querySelector('.hamburger-menu');
+        
+        if (!mobileMenu || !hamburgerMenu) {
+            console.error('Mobile menu elements not found');
+            return;
+        }
+
+        // Hamburger menu click handler
+        hamburgerMenu.addEventListener('click', function(event) {
+            event.stopPropagation();
+            mobileMenu.classList.toggle('active');
+        });
+
+        // Document click handler to close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            if (mobileMenu.classList.contains('active') && 
+                !mobileMenu.contains(event.target) && 
+                !hamburgerMenu.contains(event.target)) {
+                mobileMenu.classList.remove('active');
+            }
+        });
+
+        // Prevent clicks inside mobile menu from closing it
+        mobileMenu.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    }
+
+    // Call the initialization function when the document is ready
+    document.addEventListener('DOMContentLoaded', initializeMobileMenu);
+
+    // Add this event listener for the dashboard button
+    document.getElementById('dashboardButton').addEventListener('click', () => {
+        // Add loading state
+        const dashboardButton = document.getElementById('dashboardButton');
+        dashboardButton.classList.add('loading');
+        
+        // Send message to parent
+        window.parent.postMessage({ type: 'dashboardClicked' }, '*');
+    });
+
+    // Also update the mobile dashboard button
+    document.getElementById('dashboardButton-mobile').addEventListener('click', () => {
+        // Add loading state
+        const dashboardButtonMobile = document.getElementById('dashboardButton-mobile');
+        dashboardButtonMobile.classList.add('loading');
+        
+        // Send message to parent
+        window.parent.postMessage({ type: 'dashboardClicked' }, '*');
+    });
+
+    // Add feedback popup functionality
+    let selectedRating = 0;
+    
+    function showFeedbackPopup() {
+        document.getElementById('feedbackOverlay').style.display = 'block';
+        document.getElementById('feedbackPopup').style.display = 'block';
+        document.getElementById('feedbackForm').style.display = 'block';
+        document.getElementById('feedbackSubmitted').style.display = 'none';
+        
+        // Reset the form
+        selectedRating = 0;
+        document.getElementById('feedbackText').value = '';
+        const stars = document.querySelectorAll('.star');
+        stars.forEach(star => star.classList.remove('active'));
+    }
+    
+    function hideFeedbackPopup() {
+        document.getElementById('feedbackOverlay').style.display = 'none';
+        document.getElementById('feedbackPopup').style.display = 'none';
+    }
+    
+    // Initialize star rating
+    const stars = document.querySelectorAll('.star');
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const value = parseInt(star.getAttribute('data-value'));
+            selectedRating = value;
+            
+            // Update star display
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-value')) <= value) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        });
+        
+        // Hover effect
+        star.addEventListener('mouseenter', () => {
+            const value = parseInt(star.getAttribute('data-value'));
+            
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-value')) <= value) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        });
+        
+        star.addEventListener('mouseleave', () => {
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-value')) <= selectedRating) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        });
+    });
+    
+    // Handle feedback submission
+    document.getElementById('submitFeedback').addEventListener('click', () => {
+        const feedbackText = document.getElementById('feedbackText').value;
+        
+        // Send feedback data to parent
+        window.parent.postMessage({
+            type: 'sessionFeedback',
+            feedback: {
+                rating: selectedRating,
+                comment: feedbackText,
+                timestamp: new Date().toISOString()
+            }
+        }, '*');
+        
+        // Show thank you message
+        document.getElementById('feedbackForm').style.display = 'none';
+        document.getElementById('feedbackSubmitted').style.display = 'block';
+    });
+    
+    // Handle cancel/skip and close buttons
+    document.getElementById('cancelFeedback').addEventListener('click', hideFeedbackPopup);
+    document.getElementById('closeFeedback').addEventListener('click', hideFeedbackPopup);
+    
+    // Allow clicking outside to close
+    document.getElementById('feedbackOverlay').addEventListener('click', hideFeedbackPopup);
+
+    // Network speed monitoring
+    function measureNetworkSpeed() {
+        return new Promise((resolve) => {
+            const imageUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Image_created_with_a_mobile_phone.png/1200px-Image_created_with_a_mobile_phone.png';
+            const startTime = performance.now();
+            let speedKBps = 0;
+
+            fetch(imageUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    const endTime = performance.now();
+                    const durationInSeconds = (endTime - startTime) / 1000;
+                    const fileSizeInKB = blob.size / 1024;
+                    speedKBps = fileSizeInKB / durationInSeconds;
+                    resolve(speedKBps);
+                })
+                .catch(() => {
+                    // If fetch fails, try to use Network Information API as fallback
+                    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                    if (connection && connection.downlink) {
+                        // downlink is in Mbps, convert to KBps
+                        speedKBps = connection.downlink * 125; // 1 Mbps = 125 KBps
+                    }
+                    resolve(speedKBps);
+                });
+        });
+    }
+
+    async function updateNetworkMeter() {
+        const speed = await measureNetworkSpeed();
+        
+        // Update signal bars based on speed for both meters
+        const allBars = document.querySelectorAll('.signal-bar');
+        allBars.forEach(bar => bar.classList.remove('active'));
+        
+        let activeBars = 0;
+        if (speed > 0) {
+            if (speed < 100) activeBars = 1;        // < 100 KB/s  (~0.8 Mbps)
+            else if (speed < 500) activeBars = 2;   // < 500 KB/s  (~4 Mbps)
+            else if (speed < 2000) activeBars = 3;  // < 2000 KB/s (~16 Mbps)
+            else activeBars = 4;                    // > 2000 KB/s (>16 Mbps)
+            
+            // Update both network meters
+            ['#networkMeter', '#welcomeNetworkMeter'].forEach(meterId => {
+                const meter = document.querySelector(meterId);
+                if (meter) {
+                    const bars = meter.querySelectorAll('.signal-bar');
+                    for (let i = 0; i < activeBars; i++) {
+                        bars[i].classList.add('active');
+                    }
+                    
+                    // Update speed display
+                    const speedDisplay = meter.querySelector('.speed-display');
+                    if (speedDisplay) {
+                        if (speed > 1000) {
+                            speedDisplay.textContent = `${(speed/1000).toFixed(1)} MB/s`;
+                        } else {
+                            speedDisplay.textContent = `${Math.round(speed)} KB/s`;
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Update network meter every 5 seconds
+    setInterval(updateNetworkMeter, 5000);
+    // Initial update
+    updateNetworkMeter();
+  </script>
+</body>
+</html> 

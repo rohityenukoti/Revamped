@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Editor</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Layout */
+        .sidebar {
+            width: 300px;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        /* Tree View Styles */
+        .tree-view {
+            padding: 10px;
+        }
+        
+        .tree-item {
+            margin-bottom: 5px;
+        }
+        
+        .tree-item-header {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        
+        .tree-item-header:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .tree-item-content {
+            margin-left: 20px;
+            display: none;
+        }
+        
+        .tree-item-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            transition: transform 0.3s;
+        }
+        
+        .tree-item.open > .tree-item-header .tree-item-icon {
+            transform: rotate(90deg);
+        }
+        
+        .tree-item.open > .tree-item-content {
+            display: block;
+        }
+        
+        .case-item {
+            padding: 5px;
+            margin: 5px 0;
+            background-color: #e8f0fe;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .case-item:hover {
+            background-color: #d0e0fc;
+        }
+        
+        .case-item.highlighted {
+            border: 2px solid #007bff;
+        }
+        
+        .tree-item-header.highlighted {
+            border: 2px solid #007bff;
+        }
+        
+        /* Content Sections */
+        .section {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f0f0f0;
+            padding: 10px;
+            font-weight: bold;
+        }
+        
+        .section-content {
+            padding: 15px;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-edit {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-save {
+            background-color: #28a745;
+            color: white;
+            display: none;
+        }
+        
+        .btn-cancel {
+            background-color: #dc3545;
+            color: white;
+            display: none;
+            margin-left: 5px;
+        }
+        
+        /* Editable Content */
+        .editable-content {
+            width: 100%;
+            min-height: 100px;
+            border: none;
+            padding: 0;
+            font-family: inherit;
+            font-size: inherit;
+            resize: vertical;
+        }
+        
+        .editable-content:focus {
+            outline: none;
+        }
+        
+        .editable-content.editing {
+            border: 1px solid #007bff;
+            padding: 5px;
+        }
+        
+        /* Loading Indicator */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Rich Text Editor */
+        .rich-editor {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 200px;
+            display: none;
+        }
+        
+        /* Status Message */
+        .status-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 4px;
+            color: white;
+            background-color: #28a745;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .status-message.error {
+            background-color: #dc3545;
+        }
+        
+        /* Image Preview */
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 10px;
+        }
+        
+        .image-upload {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        /* Rich Text Editable Div */
+        .rich-editable {
+            width: 100%;
+            min-height: 200px;
+            border: 1px solid #007bff;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        
+        .rich-editable:focus {
+            outline: none;
+        }
+        
+        /* Edited Icon */
+        .edited-icon {
+            width: 12px;
+            height: 12px;
+            margin-left: 5px;
+            display: inline-block;
+            background-color: #28a745;
+            border-radius: 50%;
+        }
+        
+        /* Add this CSS */
+        .sidebar.disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        
+        .checklist-drag-handle {
+            cursor: grab;
+            padding: 5px;
+            color: #666;
+        }
+        
+        .checklist-drag-handle:hover {
+            color: #333;
+        }
+        
+        .checklist-row-dragging {
+            background-color: #f8f9fa;
+            opacity: 0.8;
+        }
+        
+        /* Floating Toolbar */
+        .floating-toolbar {
+            position: fixed;
+            display: none;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 5px;
+            z-index: 1000;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .toolbar-button {
+            background: none;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            padding: 5px;
+            margin: 0 2px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .toolbar-button:hover {
+            background: #f0f0f0;
+            border-color: #ddd;
+        }
+        
+        .toolbar-button.active {
+            background: #e0e0e0;
+            border-color: #ccc;
+        }
+        
+        .toolbar-separator {
+            display: inline-block;
+            width: 1px;
+            height: 20px;
+            background: #ddd;
+            margin: 0 5px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div id="treeView" class="tree-view"></div>
+    </div>
+    
+    <div class="main-content">
+        <h1 id="caseTitleDisplay">Select a case to edit</h1>
+        
+        <div id="caseMetadata" style="margin-bottom: 20px; color: #666; font-size: 14px;">
+            <span id="lastEditedDisplay"></span>
+            <span id="editedByDisplay"></span>
+        </div>
+        
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            <div class="spinner"></div>
+        </div>
+        
+        <div id="caseContent" style="display: none;">
+            <!-- Candidate Info Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span>Candidate Information</span>
+                    <div>
+                        <button id="editCandidateInfo" class="btn btn-edit">Edit</button>
+                        <button id="saveCandidateInfo" class="btn btn-save">Save</button>
+                        <button id="cancelCandidateInfo" class="btn btn-cancel">Cancel</button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="candidateInfoDisplay">
+                        <div><strong>Where You Are:</strong> <span id="whereAreYou"></span></div>
+                        <div><strong>Who Your Patient Is:</strong> <span id="whoYourPatientIs"></span></div>
+                        <div><strong>Other Information:</strong> <span id="otherInformation"></span></div>
+                        <div><strong>What You Must Do:</strong> <span id="whatYouMustDo"></span></div>
+                        <div><strong>Special Note:</strong> <span id="specialNote"></span></div>
+                    </div>
+                    <div id="candidateInfoEdit" style="display: none;">
+                        <div>
+                            <label for="whereAreYouEdit">Where You Are:</label>
+                            <textarea id="whereAreYouEdit" class="editable-content editing"></textarea>
+                        </div>
+                        <div>
+                            <label for="whoYourPatientIsEdit">Who Your Patient Is:</label>
+                            <textarea id="whoYourPatientIsEdit" class="editable-content editing"></textarea>
+                        </div>
+                        <div>
+                            <label for="otherInformationEdit">Other Information:</label>
+                            <textarea id="otherInformationEdit" class="editable-content editing"></textarea>
+                        </div>
+                        <div>
+                            <label for="whatYouMustDoEdit">What You Must Do:</label>
+                            <textarea id="whatYouMustDoEdit" class="editable-content editing"></textarea>
+                        </div>
+                        <div>
+                            <label for="specialNoteEdit">Special Note:</label>
+                            <textarea id="specialNoteEdit" class="editable-content editing"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Findings Image Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span>Findings Image</span>
+                    <div>
+                        <button id="editFindingsImage" class="btn btn-edit">Edit</button>
+                        <button id="saveFindingsImage" class="btn btn-save">Save</button>
+                        <button id="cancelFindingsImage" class="btn btn-cancel">Cancel</button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="findingsImageDisplay">
+                        <img id="findingsImage" class="image-preview" src="" alt="No image available">
+                    </div>
+                    <div id="findingsImageEdit" style="display: none;">
+                        <input type="file" id="findingsImageUpload" accept="image/*" class="image-upload">
+                        <div>
+                            <p>Current image:</p>
+                            <img id="findingsImagePreview" class="image-preview" src="" alt="No image available">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Findings Text Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span>Findings Text</span>
+                    <div>
+                        <button id="editFindingsText" class="btn btn-edit">Edit</button>
+                        <button id="saveFindingsText" class="btn btn-save">Save</button>
+                        <button id="cancelFindingsText" class="btn btn-cancel">Cancel</button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="findingsTextDisplay"></div>
+                    <div id="findingsTextEdit" class="rich-editable" contenteditable="true" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <!-- Patient Info Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span>Patient Information</span>
+                    <div>
+                        <button id="editPatientInfo" class="btn btn-edit">Edit</button>
+                        <button id="savePatientInfo" class="btn btn-save">Save</button>
+                        <button id="cancelPatientInfo" class="btn btn-cancel">Cancel</button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="patientInfoDisplay"></div>
+                    <div id="patientInfoEdit" class="rich-editable" contenteditable="true" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <!-- Key Points Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span>Key Points</span>
+                    <div>
+                        <button id="editKeyPoints" class="btn btn-edit">Edit</button>
+                        <button id="saveKeyPoints" class="btn btn-save">Save</button>
+                        <button id="cancelKeyPoints" class="btn btn-cancel">Cancel</button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="keyPointsDisplay"></div>
+                    <div id="keyPointsEdit" class="rich-editable" contenteditable="true" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <!-- Checklist Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span>Checklist</span>
+                    <div>
+                        <button id="editChecklist" class="btn btn-edit">Edit</button>
+                        <button id="saveChecklist" class="btn btn-save">Save</button>
+                        <button id="cancelChecklist" class="btn btn-cancel">Cancel</button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="checklistDisplay"></div>
+                    <div id="checklistEdit" style="display: none;">
+                        <div id="checklistEditor">
+                            <table id="checklistTable" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">Domain</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">Point</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="checklistTableBody">
+                                    <!-- Checklist items will be added here -->
+                                </tbody>
+                            </table>
+                            <button id="addChecklistItem" class="btn btn-edit" style="margin-top: 10px;">Add Item</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- In-Time Sections -->
+            <div class="section">
+                <div class="section-header">
+                    <span>In-Time Sections</span>
+                    <div>
+                        <button id="editInTimeSections" class="btn btn-edit">Edit</button>
+                        <button id="saveInTimeSections" class="btn btn-save">Save</button>
+                        <button id="cancelInTimeSections" class="btn btn-cancel">Cancel</button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="inTimeSectionsDisplay"></div>
+                    <div id="inTimeSectionsEdit" style="display: none;">
+                        <table id="inTimeSectionsTable" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="border: 1px solid #ddd; padding: 8px;">Section</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px;">Point</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inTimeSectionsTableBody">
+                                <!-- In-time sections will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="statusMessage" class="status-message"></div>
+    
+    <div id="floatingToolbar" class="floating-toolbar">
+        <button class="toolbar-button" data-command="fontSize" title="Font Size">
+            <select id="fontSize" onchange="formatDoc('fontSize',this.value)">
+                <option value="3">Normal</option>
+                <option value="1">Small</option>
+                <option value="5">Large</option>
+                <option value="7">Huge</option>
+            </select>
+        </button>
+        <span class="toolbar-separator"></span>
+        <button class="toolbar-button" data-command="bold" title="Bold">
+            <i class="fas fa-bold">B</i>
+        </button>
+        <button class="toolbar-button" data-command="italic" title="Italic">
+            <i class="fas fa-italic">I</i>
+        </button>
+        <button class="toolbar-button" data-command="underline" title="Underline">
+            <i class="fas fa-underline">U</i>
+        </button>
+        <span class="toolbar-separator"></span>
+        <button class="toolbar-button" data-command="insertUnorderedList" title="Bullet List">
+            <i class="fas fa-list-ul">•</i>
+        </button>
+        <button class="toolbar-button" data-command="insertOrderedList" title="Numbered List">
+            <i class="fas fa-list-ol">1.</i>
+        </button>
+        <span class="toolbar-separator"></span>
+        <button class="toolbar-button" data-command="indent" title="Increase Indent">
+            <i class="fas fa-indent">→</i>
+        </button>
+        <button class="toolbar-button" data-command="outdent" title="Decrease Indent">
+            <i class="fas fa-outdent">←</i>
+        </button>
+    </div>
+    
+    <script>
+        class TreeView {
+            constructor(element) {
+                this.element = element;
+                this.data = null;
+                this.currentTopic = null;
+                this.highlightedPath = null;
+            }
+
+            setData(data) {
+                this.data = data;
+                this.render();
+            }
+
+            updateTopic(topic, newData) {
+                const topicItem = this.findTopicItem(this.data, topic);
+                if (topicItem) {
+                    topicItem.children = this.addOpenStateToItems(newData);
+                    topicItem.open = true;
+                    topicItem.loading = false;
+                    this.currentTopic = topic;
+                    this.render();
+                }
+            }
+
+            addOpenStateToItems(items) {
+                return items.map(item => ({
+                    ...item,
+                    open: false,
+                    loading: false,
+                    children: item.children ? this.addOpenStateToItems(item.children) : null
+                }));
+            }
+
+            findTopicItem(items, topic) {
+                for (let item of items) {
+                    if (item.id === topic) {
+                        return item;
+                    }
+                }
+                return null;
+            }
+
+            render() {
+                this.element.innerHTML = this.renderTree(this.data);
+                this.addEventListeners();
+            }
+
+            renderTree(items) {
+                if (!items) return '';
+                return items.map(item => this.renderItem(item)).join('');
+            }
+
+            renderItem(item) {
+                const isHighlighted = this.isItemHighlighted(item);
+                const highlightClass = isHighlighted ? 'highlighted' : '';
+                const loadingIcon = item.loading ? '<div class="loading-icon"></div>' : '';
+                const editedIcon = item.hasBeenEdited ? '<span class="edited-icon" title="This case has been edited"></span>' : '';
+
+                if (item.type === 'caseName') {
+                    return `
+                        <div class="case-item ${highlightClass}" data-id="${item.id}">
+                            <span>${item.name}${editedIcon}</span>
+                            ${loadingIcon}
+                        </div>
+                    `;
+                }
+
+                const isOpen = item.open || (item.id === this.currentTopic);
+                const childrenContent = item.children ? this.renderTree(item.children) : '';
+                const hasChildren = item.children && item.children.length > 0;
+
+                return `
+                    <div class="tree-item ${isOpen ? 'open' : ''}" data-id="${item.id}">
+                        <div class="tree-item-header ${highlightClass}">
+                            ${hasChildren ? `
+                                <svg class="tree-item-icon" viewBox="0 0 24 24">
+                                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                                </svg>
+                            ` : ''}
+                            ${item.name}
+                            ${loadingIcon}
+                        </div>
+                        ${hasChildren ? `
+                            <div class="tree-item-content">
+                                ${childrenContent}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            isItemHighlighted(item) {
+                if (!this.highlightedPath) return false;
+                const [highlightedTopic, highlightedCategory, highlightedSubCategory, highlightedCase] = this.highlightedPath;
+
+                switch (item.type) {
+                    case 'topic':
+                        return item.id === highlightedTopic;
+                    case 'category':
+                        return item.id === `${highlightedTopic}:${highlightedCategory}`;
+                    case 'subCategory':
+                        return item.id === `${highlightedTopic}:${highlightedCategory}:${highlightedSubCategory}`;
+                    case 'caseName':
+                        const caseName = item.id.split(':')[1];
+                        return caseName === highlightedCase;
+                    default:
+                        return false;
+                }
+            }
+
+            addEventListeners() {
+                this.element.querySelectorAll('.tree-item-header').forEach(header => {
+                    header.addEventListener('click', (e) => {
+                        const item = header.closest('.tree-item');
+                        const id = item.dataset.id;
+                        const topicItem = this.findTopicItem(this.data, id);
+
+                        if (topicItem && topicItem.type === 'topic') {
+                            if (this.currentTopic !== id) {
+                                if (this.currentTopic) {
+                                    const prevTopicItem = this.findTopicItem(this.data, this.currentTopic);
+                                    if (prevTopicItem) {
+                                        prevTopicItem.children = null;
+                                        prevTopicItem.loading = false;
+                                        prevTopicItem.open = false;
+                                    }
+                                }
+
+                                topicItem.loading = true;
+                                topicItem.open = true;
+                                this.currentTopic = id;
+                                this.onTopicSelected(id);
+                            } else {
+                                topicItem.open = !topicItem.open;
+                                if (!topicItem.open) {
+                                    this.currentTopic = null;
+                                }
+                            }
+                        } else {
+                            this.toggleItemOpen(this.data, id, false);
+                        }
+
+                        this.render();
+                        e.stopPropagation();
+                    });
+                });
+
+                this.element.querySelectorAll('.case-item').forEach(caseItem => {
+                    caseItem.addEventListener('click', (e) => {
+                        const caseName = caseItem.dataset.id;
+                        const caseId = caseName.split(':')[1];
+                        this.setItemLoading(this.data, caseId, true);
+                        this.render();
+                        this.onCaseSelected(caseName);
+                        e.stopPropagation();
+                    });
+                });
+            }
+
+            toggleItemOpen(items, id, isTopic) {
+                for (let item of items) {
+                    if (item.id === id) {
+                        if (isTopic) {
+                            item.open = !item.open;
+                        } else {
+                            item.open = !item.open;
+                        }
+                        return true;
+                    }
+                    if (item.children && this.toggleItemOpen(item.children, id, false)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            setItemLoading(items, id, isLoading) {
+                if (!items) return false;
+                
+                for (let item of items) {
+                    if (item.id === id || item.id.includes(`:${id}`)) {
+                        item.loading = isLoading;
+                        return true;
+                    }
+                    if (item.children && this.setItemLoading(item.children, id, isLoading)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            onTopicSelected(topicId) {
+                window.parent.postMessage({ type: 'topicSelected', topicId: topicId }, '*');
+            }
+
+            onCaseSelected(caseName) {
+                window.parent.postMessage({ type: 'caseSelected', caseName: caseName }, '*');
+            }
+
+            highlightCase(topic, category, subCategory, caseName) {
+                this.highlightedPath = [topic, category, subCategory, caseName];
+                this.render();
+            }
+
+            handleSaveConfirmation(section, success) {
+                const saveBtn = document.getElementById(`save${section}`);
+                const cancelBtn = document.getElementById(`cancel${section}`);
+                const editBtn = document.getElementById(`edit${section}`);
+                const displayEl = document.getElementById(`${section.charAt(0).toLowerCase() + section.slice(1)}Display`);
+                const editEl = document.getElementById(`${section.charAt(0).toLowerCase() + section.slice(1)}Edit`);
+                
+                if (success) {
+                    currentlyEditingSection = null;
+                    document.querySelector('.sidebar').classList.remove('disabled');
+                    displayEl.style.display = 'block';
+                    editEl.style.display = 'none';
+                    editBtn.style.display = 'inline-block';
+                    saveBtn.style.display = 'none';
+                    cancelBtn.style.display = 'none';
+                    
+                    if (section === 'FindingsImage') {
+                        document.getElementById('findingsImageUpload').style.display = 'none';
+                    }
+                    
+                    showStatusMessage('Changes saved successfully!', false);
+                } else {
+                    showStatusMessage('Error saving changes. Please try again.', true);
+                }
+            }
+        }
+
+        // Initialize TreeView
+        const treeView = new TreeView(document.getElementById('treeView'));
+        
+        // Current case data
+        let currentCase = null;
+        
+        // Add these variables at the top of the script section
+        let currentlyEditingSection = null;
+        
+        // Modify setupEditButtons function
+        function setupEditButtons(section) {
+            const editBtn = document.getElementById(`edit${section}`);
+            const saveBtn = document.getElementById(`save${section}`);
+            const cancelBtn = document.getElementById(`cancel${section}`);
+            const displayEl = document.getElementById(`${section.charAt(0).toLowerCase() + section.slice(1)}Display`);
+            const editEl = document.getElementById(`${section.charAt(0).toLowerCase() + section.slice(1)}Edit`);
+            
+            editBtn.addEventListener('click', () => {
+                // Check if another section is already being edited
+                if (currentlyEditingSection && currentlyEditingSection !== section) {
+                    showStatusMessage(`Please save or cancel your changes to the ${currentlyEditingSection} section first.`, true);
+                    return;
+                }
+                
+                currentlyEditingSection = section;
+                document.querySelector('.sidebar').classList.add('disabled');
+                displayEl.style.display = 'none';
+                editEl.style.display = 'block';
+                editBtn.style.display = 'none';
+                saveBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'inline-block';
+                
+                // Special handling for different sections
+                if (section === 'FindingsImage') {
+                    document.getElementById('findingsImageUpload').style.display = 'block';
+                    document.getElementById('findingsImagePreview').src = document.getElementById('findingsImage').src;
+                }
+                
+                // For rich text sections, copy content from display to edit
+                if (['FindingsText', 'PatientInfo', 'KeyPoints'].includes(section)) {
+                    editEl.innerHTML = displayEl.innerHTML;
+                }
+            });
+            
+            saveBtn.addEventListener('click', () => {
+                // Save changes
+                const data = collectSectionData(section);
+                window.parent.postMessage({ 
+                    type: 'saveSection', 
+                    section: section,
+                    caseName: currentCase.caseName,
+                    data: data
+                }, '*');
+                
+                // Show loading indicator
+                showStatusMessage('Saving changes...', false);
+            });
+            
+            cancelBtn.addEventListener('click', () => {
+                currentlyEditingSection = null;
+                document.querySelector('.sidebar').classList.remove('disabled');
+                displayEl.style.display = 'block';
+                editEl.style.display = 'none';
+                editBtn.style.display = 'inline-block';
+                saveBtn.style.display = 'none';
+                cancelBtn.style.display = 'none';
+                
+                // Reset edits
+                if (section === 'CandidateInfo') {
+                    document.getElementById('whereAreYouEdit').value = currentCase.candidateInfo?.whereAreYou || '';
+                    document.getElementById('whoYourPatientIsEdit').value = currentCase.candidateInfo?.whoYourPatientIs || '';
+                    document.getElementById('otherInformationEdit').value = currentCase.candidateInfo?.otherInformation || '';
+                    document.getElementById('whatYouMustDoEdit').value = currentCase.candidateInfo?.whatYouMustDo || '';
+                    document.getElementById('specialNoteEdit').value = currentCase.candidateInfo?.specialNote || '';
+                } else if (section === 'FindingsImage') {
+                    document.getElementById('findingsImageUpload').style.display = 'none';
+                } else if (['FindingsText', 'PatientInfo', 'KeyPoints'].includes(section)) {
+                    // For rich text sections, reset to current content
+                    editEl.innerHTML = displayEl.innerHTML;
+                } else if (section === 'Checklist') {
+                    renderChecklistDisplay();
+                } else if (section === 'InTimeSections') {
+                    renderInTimeSectionsDisplay();
+                }
+            });
+        }
+        
+        // Collect data from edit forms
+        function collectSectionData(section) {
+            switch(section) {
+                case 'CandidateInfo':
+                    return {
+                        whereAreYou: document.getElementById('whereAreYouEdit').value,
+                        whoYourPatientIs: document.getElementById('whoYourPatientIsEdit').value,
+                        otherInformation: document.getElementById('otherInformationEdit').value,
+                        whatYouMustDo: document.getElementById('whatYouMustDoEdit').value,
+                        specialNote: document.getElementById('specialNoteEdit').value
+                    };
+                case 'FindingsImage':
+                    // Image upload is handled separately
+                    const fileInput = document.getElementById('findingsImageUpload');
+                    if (fileInput.files.length > 0) {
+                        return {
+                            file: fileInput.files[0]
+                        };
+                    }
+                    return null;
+                case 'FindingsText':
+                    return document.getElementById('findingsTextEdit').innerHTML;
+                case 'PatientInfo':
+                    return document.getElementById('patientInfoEdit').innerHTML;
+                case 'KeyPoints':
+                    return document.getElementById('keyPointsEdit').innerHTML;
+                case 'Checklist':
+                    const checklistItems = [];
+                    const rows = document.getElementById('checklistTableBody').querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const domainSelect = row.querySelector('.domain-select');
+                        const pointInput = row.querySelector('.point-input');
+                        if (domainSelect && pointInput) {
+                            checklistItems.push({
+                                Domain: domainSelect.value,
+                                Point: pointInput.value
+                            });
+                        }
+                    });
+                    return checklistItems;
+                case 'InTimeSections':
+                    const inTimeSections = [];
+                    const inTimeRows = document.getElementById('inTimeSectionsTableBody').querySelectorAll('tr');
+                    inTimeRows.forEach(row => {
+                        const sectionInput = row.querySelector('.section-input');
+                        const pointInput = row.querySelector('.point-input');
+                        if (sectionInput && pointInput) {
+                            inTimeSections.push({
+                                Section: sectionInput.innerHTML,
+                                Point: pointInput.innerHTML
+                            });
+                        }
+                    });
+                    return inTimeSections;
+                default:
+                    return null;
+            }
+        }
+        
+        // Display case data
+        function displayCaseData(caseData) {
+            currentCase = caseData;
+            document.getElementById('caseTitleDisplay').textContent = caseData.caseName;
+            document.getElementById('caseContent').style.display = 'block';
+            document.getElementById('loadingIndicator').style.display = 'none';
+            
+            // Display last edited information
+            const lastEditedEl = document.getElementById('lastEditedDisplay');
+            const editedByEl = document.getElementById('editedByDisplay');
+            
+            if (caseData.lastEdited) {
+                const lastEditedDate = new Date(caseData.lastEdited);
+                lastEditedEl.textContent = `Last edited: ${lastEditedDate.toLocaleString()}`;
+                lastEditedEl.style.display = 'inline-block';
+                lastEditedEl.style.marginRight = '15px';
+            } else {
+                lastEditedEl.style.display = 'none';
+            }
+            
+            if (caseData.editedBy) {
+                editedByEl.textContent = `Edited by: ${caseData.editedBy}`;
+                editedByEl.style.display = 'inline-block';
+            } else {
+                editedByEl.style.display = 'none';
+            }
+            
+            // Candidate Info
+            if (caseData.candidateInfo) {
+                const info = Array.isArray(caseData.candidateInfo.candidateInfo) 
+                    ? caseData.candidateInfo.candidateInfo[0] 
+                    : caseData.candidateInfo;
+
+                document.getElementById('whereAreYou').textContent = info.whereAreYou || '';
+                document.getElementById('whoYourPatientIs').textContent = info.whoYourPatientIs || '';
+                document.getElementById('otherInformation').textContent = info.otherInformation || '';
+                document.getElementById('whatYouMustDo').textContent = info.whatYouMustDo || '';
+                document.getElementById('specialNote').textContent = info.specialNote || '';
+                
+                // Set edit form values
+                document.getElementById('whereAreYouEdit').value = info.whereAreYou || '';
+                document.getElementById('whoYourPatientIsEdit').value = info.whoYourPatientIs || '';
+                document.getElementById('otherInformationEdit').value = info.otherInformation || '';
+                document.getElementById('whatYouMustDoEdit').value = info.whatYouMustDo || '';
+                document.getElementById('specialNoteEdit').value = info.specialNote || '';
+            }
+            
+            // Findings Image
+            if (caseData.findingsImage) {
+                const imageUrl = caseData.findingsImage
+                    .replace('wix:image://v1/', 'https://static.wixstatic.com/media/')
+                    .split('#')[0]  // Remove everything after #
+                    .split('/').slice(0, -1).join('/'); // Remove the last path segment
+                
+                //console.log('Original URL:', caseData.findingsImage);
+                //console.log('Transformed URL:', imageUrl);
+                
+                document.getElementById('findingsImage').src = imageUrl;
+                document.getElementById('findingsImage').style.display = 'block';
+            } else {
+                document.getElementById('findingsImage').style.display = 'none';
+            }
+            
+            // Findings Text
+            const findingsText = caseData.findingsText || '';
+            document.getElementById('findingsTextDisplay').innerHTML = findingsText;
+            document.getElementById('findingsTextEdit').innerHTML = findingsText;
+            
+            // Patient Info
+            const patientInfo = caseData.patientInfo || '';
+            document.getElementById('patientInfoDisplay').innerHTML = patientInfo;
+            document.getElementById('patientInfoEdit').innerHTML = patientInfo;
+            
+            // Key Points
+            const keyPoints = caseData.keyPoints || '';
+            document.getElementById('keyPointsDisplay').innerHTML = keyPoints;
+            document.getElementById('keyPointsEdit').innerHTML = keyPoints;
+            
+            // Checklist
+            renderChecklistDisplay();
+            renderChecklistEdit();
+            
+            // In-Time Sections
+            renderInTimeSectionsDisplay();
+            renderInTimeSectionsEdit();
+        }
+        
+        // Helper function to safely encode text for HTML attributes
+        function encodeHtmlAttribute(text) {
+            if (!text) return '';
+            return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        
+        // Render checklist display
+        function renderChecklistDisplay() {
+            if (!currentCase || !currentCase.checklist || !currentCase.checklist.Checklist) {
+                document.getElementById('checklistDisplay').innerHTML = '<p>No checklist available</p>';
+                return;
+            }
+            
+            const checklist = currentCase.checklist.Checklist;
+            let html = '<table style="width: 100%; border-collapse: collapse;">';
+            html += '<thead><tr><th style="border: 1px solid #ddd; padding: 8px;">Domain</th><th style="border: 1px solid #ddd; padding: 8px;">Point</th></tr></thead><tbody>';
+            
+            checklist.forEach(item => {
+                html += `<tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.Domain || ''}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.Point || ''}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('checklistDisplay').innerHTML = html;
+        }
+        
+        // Render checklist edit
+        function renderChecklistEdit() {
+            const tableBody = document.getElementById('checklistTableBody');
+            tableBody.innerHTML = '';
+            
+            if (!currentCase || !currentCase.checklist || !currentCase.checklist.Checklist) {
+                return;
+            }
+            
+            const checklist = currentCase.checklist.Checklist;
+            checklist.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.setAttribute('draggable', 'true');
+                row.dataset.index = index;
+                
+                // Escape quotes for HTML attributes
+                const pointValue = encodeHtmlAttribute(item.Point || '');
+                
+                row.innerHTML = `
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        <div class="checklist-drag-handle">
+                            <svg width="16" height="16" viewBox="0 0 24 24">
+                                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                            </svg>
+                        </div>
+                        <select class="domain-select" style="width: 100%; padding: 5px;">
+                            <option value="Data Gathering" ${item.Domain === 'Data Gathering' ? 'selected' : ''}>Data Gathering</option>
+                            <option value="Management" ${item.Domain === 'Management' ? 'selected' : ''}>Management</option>
+                            <option value="Interpersonal Skills" ${item.Domain === 'Interpersonal Skills' ? 'selected' : ''}>Interpersonal Skills</option>
+                        </select>
+                    </td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        <input type="text" class="point-input" value="${pointValue}" style="width: 100%; padding: 5px;">
+                    </td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        <button class="btn btn-edit remove-item" data-index="${index}">Remove</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                
+                // Add event listener for the remove button
+                row.querySelector('.remove-item').addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    e.target.closest('tr').remove();
+                    // Re-index the remaining buttons
+                    document.querySelectorAll('.remove-item').forEach((btn, i) => {
+                        btn.dataset.index = i;
+                    });
+                });
+                
+                // Add drag-and-drop event listeners to the row
+                setupDragAndDropForRow(row);
+            });
+            
+            // Remove any existing event listener for the add button
+            const addButton = document.getElementById('addChecklistItem');
+            const newAddButton = addButton.cloneNode(true);
+            addButton.parentNode.replaceChild(newAddButton, addButton);
+            
+            // Add new event listener for add button
+            newAddButton.addEventListener('click', () => {
+                const row = document.createElement('tr');
+                row.setAttribute('draggable', 'true');
+                const newIndex = document.querySelectorAll('.remove-item').length;
+                row.dataset.index = newIndex;
+                
+                row.innerHTML = `
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        <div class="checklist-drag-handle">
+                            <svg width="16" height="16" viewBox="0 0 24 24">
+                                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                            </svg>
+                        </div>
+                        <select class="domain-select" style="width: 100%; padding: 5px;">
+                            <option value="Data Gathering">Data Gathering</option>
+                            <option value="Management">Management</option>
+                            <option value="Interpersonal Skills">Interpersonal Skills</option>
+                        </select>
+                    </td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        <input type="text" class="point-input" value="" style="width: 100%; padding: 5px;">
+                    </td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        <button class="btn btn-edit remove-item" data-index="${newIndex}">Remove</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                
+                // Add event listener for the new remove button
+                row.querySelector('.remove-item').addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    e.target.closest('tr').remove();
+                    // Re-index the remaining buttons
+                    document.querySelectorAll('.remove-item').forEach((btn, i) => {
+                        btn.dataset.index = i;
+                    });
+                });
+                
+                // Add drag-and-drop event listeners to the new row
+                setupDragAndDropForRow(row);
+            });
+        }
+        
+        // Add this new function for drag-and-drop functionality
+        function setupDragAndDropForChecklist() {
+            const tableBody = document.getElementById('checklistTableBody');
+            const rows = tableBody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                setupDragAndDropForRow(row);
+            });
+        }
+        
+        function setupDragAndDropForRow(row) {
+            row.addEventListener('dragstart', handleDragStart);
+            row.addEventListener('dragover', handleDragOver);
+            row.addEventListener('dragenter', handleDragEnter);
+            row.addEventListener('dragleave', handleDragLeave);
+            row.addEventListener('drop', handleDrop);
+            row.addEventListener('dragend', handleDragEnd);
+        }
+        
+        let draggedRow = null;
+        
+        function handleDragStart(e) {
+            draggedRow = this;
+            this.classList.add('checklist-row-dragging');
+            
+            // Required for Firefox
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        }
+        
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault(); // Necessary to allow dropping
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+        
+        function handleDragEnter(e) {
+            this.classList.add('over');
+        }
+        
+        function handleDragLeave(e) {
+            this.classList.remove('over');
+        }
+        
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation(); // Stops some browsers from redirecting
+            }
+            
+            if (draggedRow !== this) {
+                // Get the table body and all rows
+                const tableBody = document.getElementById('checklistTableBody');
+                const rows = Array.from(tableBody.querySelectorAll('tr'));
+                
+                // Get the indices of the dragged and target rows
+                const draggedIndex = parseInt(draggedRow.dataset.index);
+                const targetIndex = parseInt(this.dataset.index);
+                
+                // Reorder the rows in the DOM
+                if (targetIndex > draggedIndex) {
+                    tableBody.insertBefore(draggedRow, this.nextSibling);
+                } else {
+                    tableBody.insertBefore(draggedRow, this);
+                }
+                
+                // Update the indices of all rows
+                rows.forEach((row, index) => {
+                    row.dataset.index = index;
+                    row.querySelector('.remove-item').dataset.index = index;
+                });
+            }
+            
+            return false;
+        }
+        
+        function handleDragEnd(e) {
+            // Remove the dragging class and reset draggedRow
+            this.classList.remove('checklist-row-dragging');
+            
+            // Remove 'over' class from all rows
+            const rows = document.querySelectorAll('#checklistTableBody tr');
+            rows.forEach(row => {
+                row.classList.remove('over');
+            });
+            
+            draggedRow = null;
+        }
+        
+        // Render in-time sections display
+        function renderInTimeSectionsDisplay() {
+            if (!currentCase || !currentCase.inTimeSections || !currentCase.inTimeSections.Consultation) {
+                document.getElementById('inTimeSectionsDisplay').innerHTML = '<p>No in-time sections available</p>';
+                return;
+            }
+            
+            const sections = currentCase.inTimeSections.Consultation;
+            let html = '<table style="width: 100%; border-collapse: collapse;">';
+            html += '<thead><tr><th style="border: 1px solid #ddd; padding: 8px;">Section</th><th style="border: 1px solid #ddd; padding: 8px;">Point</th></tr></thead><tbody>';
+            
+            sections.forEach(item => {
+                html += `<tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.Section || ''}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.Point || ''}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('inTimeSectionsDisplay').innerHTML = html;
+        }
+        
+        // Render in-time sections edit
+        function renderInTimeSectionsEdit() {
+            const tableBody = document.getElementById('inTimeSectionsTableBody');
+            tableBody.innerHTML = '';
+            
+            if (!currentCase || !currentCase.inTimeSections || !currentCase.inTimeSections.Consultation) {
+                // Create default 16 empty rows
+                for (let i = 0; i < 16; i++) {
+                    addInTimeRow(tableBody, '', '');
+                }
+                return;
+            }
+            
+            const sections = currentCase.inTimeSections.Consultation;
+            sections.forEach(item => {
+                // Don't encode HTML - we want to preserve formatting
+                const section = item.Section || '';
+                const point = item.Point || '';
+                
+                addInTimeRow(tableBody, section, point);
+            });
+            
+            // Add empty rows if less than 16
+            const currentRows = tableBody.querySelectorAll('tr').length;
+            for (let i = currentRows; i < 16; i++) {
+                addInTimeRow(tableBody, '', '');
+            }
+        }
+        
+        function addInTimeRow(tableBody, section, point) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    <div contenteditable="true" class="section-input rich-editable" style="min-height: auto; padding: 5px;">${section}</div>
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    <div contenteditable="true" class="point-input rich-editable" style="min-height: auto; padding: 5px;">${point}</div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        }
+        
+        // Show status message
+        function showStatusMessage(message, isError) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = isError ? 'status-message error' : 'status-message';
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Floating toolbar functionality
+        function initFloatingToolbar() {
+            const toolbar = document.getElementById('floatingToolbar');
+            const buttons = toolbar.querySelectorAll('.toolbar-button');
+            
+            // Add click handlers for toolbar buttons
+            buttons.forEach(button => {
+                if (!button.querySelector('select')) { // Skip select elements
+                    button.addEventListener('click', () => {
+                        const command = button.dataset.command;
+                        formatDoc(command);
+                    });
+                }
+            });
+
+            // Show/hide toolbar based on edit mode
+            const editButtons = document.querySelectorAll('.btn-edit');
+            editButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    toolbar.style.display = 'block';
+                });
+            });
+
+            const cancelButtons = document.querySelectorAll('.btn-cancel');
+            const saveButtons = document.querySelectorAll('.btn-save');
+            
+            [...cancelButtons, ...saveButtons].forEach(button => {
+                button.addEventListener('click', () => {
+                    toolbar.style.display = 'none';
+                });
+            });
+        }
+
+        function formatDoc(command, value = null) {
+            document.execCommand(command, false, value);
+        }
+
+        // Initialize the editor
+        function initEditor() {
+            // Setup edit buttons for all sections
+            setupEditButtons('CandidateInfo');
+            setupEditButtons('FindingsImage');
+            setupEditButtons('FindingsText');
+            setupEditButtons('PatientInfo');
+            setupEditButtons('KeyPoints');
+            setupEditButtons('Checklist');
+            setupEditButtons('InTimeSections');
+            
+            // Setup file input for image upload
+            document.getElementById('findingsImageUpload').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        document.getElementById('findingsImagePreview').src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Listen for messages from parent window
+            window.addEventListener('message', (event) => {
+                const data = event.data;
+                
+                if (data.type === 'loadCaseData') {
+                    displayCaseData(data.caseData);
+                } else if (data.type === 'saveConfirmation') {
+                    treeView.handleSaveConfirmation(data.section, data.success);
+                    
+                    // If save was successful, update the displayed data
+                    if (data.success && data.updatedData) {
+                        displayCaseData(data.updatedData);
+                    }
+                } else if (data.type === 'setTreeData') {
+                    treeView.setData(data.data);
+                } else if (data.type === 'updateTopic') {
+                    treeView.updateTopic(data.topic, data.data);
+                } else if (data.type === 'highlightCase') {
+                    treeView.highlightCase(data.topic, data.category, data.subCategory, data.caseName);
+                }
+            });
+            
+            initFloatingToolbar();
+        }
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initEditor);
+    </script>
+</body>
+</html>

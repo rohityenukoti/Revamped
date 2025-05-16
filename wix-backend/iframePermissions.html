@@ -1,0 +1,27 @@
+<script>
+    function addPermissions(iframe) {
+        const ALLOW_PERMISSIONS = 'camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *; web-share *;'
+        if (iframe.allow === ALLOW_PERMISSIONS) {
+            return
+        }
+        iframe.setAttribute('allow', ALLOW_PERMISSIONS)
+        iframe.allow = ALLOW_PERMISSIONS
+        iframe.src = iframe.src
+    }
+
+    document.querySelectorAll('iframe').forEach(addPermissions)
+
+    const observer = new MutationObserver(function(mutationsList, observer) {
+        for (let mutation of mutationsList) {
+            if (mutation.addedNodes && mutation.addedNodes.length) {
+                for (let node of mutation.addedNodes) {
+                    if (node.querySelectorAll) {
+                        node.querySelectorAll('iframe').forEach(addPermissions)
+                    }
+                }
+            }
+        }
+    })
+
+    observer.observe(document.body, { attributes: false, childList: true, subtree: true })
+</script>

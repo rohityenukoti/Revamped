@@ -1,0 +1,3494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Student Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* Global Styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #ffde59;  /* Bright yellow background */
+            background-image: linear-gradient(45deg, transparent 49%, white 49%, white 51%, transparent 51%),
+                             linear-gradient(-45deg, transparent 49%, white 49%, white 51%, transparent 51%);
+            background-size: 30px 30px;
+            background-position: center;
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 25px;
+            max-width: 1200px;
+            margin: 70px auto 0;  /* Increased top margin */
+            padding: 0 20px;
+            width: 100%;
+            position: relative;
+            z-index: 1;  /* Lower z-index than tabs */
+        }
+
+        .widget {
+            background-color: white;
+            border: 4px solid black;  /* Thick black border */
+            border-radius: 0;         /* Remove border radius */
+            padding: 25px;
+            box-shadow: 8px 8px 0 black;  /* Offset shadow */
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .widget:hover {
+            transform: translate(-4px, -4px);
+            box-shadow: 12px 12px 0 black;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 1em;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+        }
+
+        /* Tab Styles */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #ffde59;
+            padding: 10px;
+            z-index: 1000;
+            border-bottom: 4px solid black;  /* Add border to bottom of tabs */
+            box-shadow: 0 4px 0 black;      /* Add shadow to match design */
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background-color: white;
+            border: 4px solid black;
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            box-shadow: 4px 4px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .tab:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 black;
+        }
+
+        .tab.active {
+            background-color: #ff3366;  /* Bright pink for active state */
+            color: white;
+        }
+
+        /* Button Styles */
+        button, .preset-btn, .filter-btn {
+            background-color: white;
+            border: 3px solid black;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover, .preset-btn:hover, .filter-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 black;
+        }
+
+        /* Chat Styles */
+        #chat-messages {
+            border: 3px solid black;
+            border-radius: 0;
+        }
+
+        .message {
+            border: 2px solid black;
+            border-radius: 0;
+            margin-bottom: 15px;
+        }
+
+        .user-message {
+            background-color: #ff3366;
+            color: white;
+        }
+
+        .assistant-message {
+            background-color: #4a90e2;
+            color: white;
+        }
+
+        /* Countdown Timer Styles */
+        .time-block {
+            background-color: white;
+            border: 3px solid black;
+            box-shadow: 4px 4px 0 black;
+            padding: 15px;
+            min-width: 80px;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            border: 3px solid black;
+            padding: 15px;
+            background-color: white;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            height: 400px;  /* Add specific height */
+            min-height: 400px;  /* Add minimum height */
+        }
+
+        /* Input Styles */
+        input[type="date"] {
+            border: 3px solid black;
+            padding: 8px;
+            font-size: 1em;
+            box-shadow: 4px 4px 0 black;
+        }
+
+        /* Performance Summary */
+        .summary-item {
+            border: 3px solid black;
+            padding: 15px;
+            box-shadow: 4px 4px 0 black;
+        }
+
+        .summary-value {
+            color: #ff3366;
+        }
+
+        /* Exam Countdown Styles */
+        #exam-countdown {
+            text-align: center;
+        }
+        .countdown-timer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .time-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .time-label {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        /* Progress Charts Styles */
+        .progressChartsContainer {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .chart-item {
+            text-align: center;
+            min-height: 200px;
+            position: relative;
+            width: 100%;
+            padding: 10px;
+        }
+
+        .chart-item h3 {
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .chart-item canvas {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 150px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1200px) {
+            .progressChartsContainer {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .progressChartsContainer {
+                grid-template-columns: 1fr;
+            }
+            .chart-item {
+                min-height: 180px;
+            }
+        }
+
+        /* Chat Styles */
+        #chat-container {
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #e6f2ff;
+            margin-left: auto;
+        }
+        .assistant-message {
+            background-color: #f0f0f0;
+        }
+        #preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .preset-btn {
+            padding: 10px;
+            background-color: #e6f2ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Performance Widget Styles */
+        .performance-summary {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #36A2EB;
+        }
+        .summary-label {
+            color: #666;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .tab {
+                padding: 8px 12px;  /* Smaller padding */
+                font-size: 0.9em;   /* Smaller font */
+                border-width: 2px;  /* Thinner border */
+                box-shadow: 2px 2px 0 black;  /* Smaller shadow */
+            }
+
+            .tab .emoji {
+                font-size: 0.9em;  /* Smaller emoji */
+            }
+
+            .tabs {
+                gap: 5px;  /* Smaller gap between tabs */
+                padding: 5px;  /* Smaller padding around tabs container */
+            }
+
+            .dashboard-container {
+                margin-top: 80px;  /* Adjust top margin for mobile */
+                padding: 0 10px;   /* Smaller padding on mobile */
+            }
+
+            .chart-container {
+                height: 300px;  /* Slightly smaller but still substantial height for mobile */
+                min-height: 300px;
+            }
+            
+            #performance .widget {
+                min-height: 400px;  /* Adjusted minimum height for mobile */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tab {
+                padding: 6px 8px;     /* Even smaller padding */
+                font-size: 0.8em;     /* Even smaller font */
+                border-width: 2px;    /* Keep thin border */
+                box-shadow: 1px 1px 0 black;  /* Smaller shadow */
+            }
+
+            .tab .emoji {
+                display: none;  /* Hide emoji on very small screens */
+            }
+
+            .tabs {
+                gap: 3px;  /* Minimal gap */
+            }
+
+            .dashboard-container {
+                margin-top: 50px;  /* Even smaller margin for very small screens */
+            }
+        }
+
+        /* Add these new styles in the <style> section */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .emoji {
+            margin-right: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .level-button {
+            padding: 12px 24px;
+            background-color: white;
+            border: 4px solid black;
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            box-shadow: 4px 4px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .level-button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 black;
+        }
+
+        .level-button.active {
+            background-color: #ff3366;
+            color: white;
+        }
+
+        .filter-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: white;
+            border: 4px solid black;
+            box-shadow: 4px 4px 0 black;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .filter-item input {
+            margin-right: 10px;
+        }
+
+        .community-average {
+            position: absolute;
+            width: 2px;
+            background-color: #ffd700;
+            pointer-events: none;
+        }
+
+        #progressChartContainer {
+            height: 80vh;
+            position: relative;
+            width: 100%;
+        }
+
+        #progress .widget {
+            min-height: 800px;  /* Add minimum height to the widget in progress tab */
+        }
+
+        #progress .chart-container {
+            height: 150vh;  /* Add specific height for the chart container in progress tab */
+            border: 3px solid black;
+            padding: 15px;
+            background-color: white;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .case-map-item {
+            margin-bottom: 15px;
+        }
+
+        .case-map-header {
+            position: relative;
+            overflow: hidden;
+            background-color: white;
+            border: 4px solid black;
+            padding: 15px;
+            box-shadow: 4px 4px 0 black;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .case-map-header.topic {
+            font-size: 1.4em; /* Larger font for topics */
+            font-weight: bold; /* Bold for topics */
+            padding: 15px; /* More padding for topics */
+            background-color: #f9f9f9; /* Light background for topics */
+        }
+
+        .case-map-header.category {
+            font-size: 1.2em; /* Slightly smaller for categories */
+            font-weight: normal; /* Normal weight for categories */
+            padding: 5px 5px 5px 15px; /* Less padding than topics, more on left */
+            background-color: #f0f0f0; /* Slightly darker background */
+        }
+
+        .case-map-header.subcategory {
+            font-size: 1em; /* Default size for subcategories */
+            font-weight: normal;
+            padding: 3px 3px 3px 10px; /* Less padding than categories, more on left */
+            background-color: #e9e9e9; /* Darker background */
+        }
+
+        .case-map-header:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 black;
+        }
+
+        .progress-bar-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background-color: white;
+            z-index: 0;
+        }
+
+        .progress-bar-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: rgba(54, 162, 235, 0.2);
+            transition: width 0.3s ease;
+            z-index: 1;
+        }
+
+        .case-map-header-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            font-weight: bold;
+            gap: 10px;
+        }
+
+        .case-map-arrow {
+            transition: transform 0.3s;
+            margin-left: 10px;
+        }
+
+        .case-map-arrow.active {
+            transform: rotate(90deg);
+        }
+
+        .case-map-content {
+            display: none;
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .case-map-content.active {
+            display: block;
+        }
+
+        .case-item {
+            background-color: #e0e0e0; /* Darkest background for cases */
+            border: 2px solid black;
+            padding: 12px;
+            margin-top: 5px;
+            box-shadow: 2px 2px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-size: 0.9em; /* Smaller font for cases */
+            font-weight: normal;
+        }
+
+        .case-item:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 black;
+        }
+
+        .case-item.completed-case {
+            border-color: #36A2EB;
+        }
+
+        .domain-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border: 2px solid black;
+        }
+
+        .domain-scores {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-left: auto;
+        }
+
+        .domain-score {
+            padding: 0px 6px;
+            border: 2px solid black;
+            font-size: 0.7em;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            min-width: 45px;
+            line-height: 1.2;
+        }
+
+        .domain-score.data-gathering {
+            background-color: #36A2EB;
+        }
+
+        .domain-score.management {
+            background-color: #FF6384;
+        }
+
+        .domain-score.interpersonal {
+            background-color: #4BC0C0;
+        }
+
+        /* Add these new styles in the <style> section */
+        .progress-count {
+            position: relative;
+            min-width: 45px;
+            height: 30px;
+            background-color: white;
+            border: 2px solid black;
+            border-radius: 0;  /* Remove border radius for sharp corners */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            margin-left: 10px;
+            padding: 2px 8px;  /* Add horizontal padding */
+            box-shadow: 2px 2px 0 black;  /* Add shadow for consistent style */
+            transition: transform 0.2s, box-shadow 0.2s;  /* Add hover animation */
+        }
+
+        .progress-count:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 black;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Add these new styles in the <style> section */
+        .case-buttons {
+            display: none;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;  /* Allow buttons to wrap on smaller screens */
+            justify-content: space-between;  /* Distribute space between buttons */
+        }
+
+        .case-buttons.active {
+            display: flex;
+        }
+
+        .case-button {
+            flex: 1;  /* Each button takes equal space */
+            min-width: 150px;  /* Minimum width to prevent buttons from becoming too narrow */
+            background-color: white;
+            border: 3px solid black;
+            padding: 8px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 2px;  /* Add small margin to ensure spacing when wrapped */
+        }
+
+        .case-button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 black;
+        }
+
+        /* Add these new styles for the loading state */
+        .case-button.loading {
+            position: relative;
+            color: transparent;  /* Hide button text while loading */
+        }
+
+        .case-button.loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin: -8px 0 0 -8px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #000;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Add these new mobile-specific styles */
+        @media (max-width: 768px) {
+            /* Exam Countdown Mobile Styles */
+            #exam-countdown h2 {
+                font-size: 1.4em;
+                margin-bottom: 0.5em;
+            }
+
+            .countdown-timer {
+                gap: 10px;
+            }
+
+            .time-block {
+                min-width: 60px;
+                padding: 8px;
+            }
+
+            .time-value {
+                font-size: 1.2em;
+            }
+
+            .time-label {
+                font-size: 0.7em;
+            }
+
+            /* Overall Performance Mobile Styles */
+            .performance-summary {
+                gap: 10px;
+            }
+
+            .summary-item {
+                padding: 8px;
+            }
+
+            .summary-value {
+                font-size: 1.2em;
+            }
+
+            .summary-label {
+                font-size: 0.7em;
+            }
+
+            /* General Mobile Adjustments */
+            .widget {
+                padding: 15px;
+            }
+
+            h2 {
+                font-size: 1.4em;
+                margin-bottom: 0.5em;
+            }
+
+            button, .preset-btn, .filter-btn {
+                padding: 8px 16px;
+                font-size: 0.9em;
+            }
+
+            /* Case Map Mobile Styles */
+            .case-map-header.topic {
+                font-size: 1.1em;
+                padding: 10px;
+            }
+
+            .case-map-header.category {
+                font-size: 0.9em;
+                padding: 8px 8px 8px 12px;
+            }
+
+            .case-map-header.subcategory {
+                font-size: 0.85em;
+                padding: 6px 6px 6px 10px;
+            }
+
+            .case-item {
+                font-size: 0.8em;
+                padding: 8px;
+            }
+
+            .progress-count {
+                font-size: 0.7em;
+                min-width: 35px;
+                height: 24px;
+            }
+
+            .domain-score {
+                font-size: 0.6em;
+                min-width: 35px;
+                padding: 0px 4px;
+            }
+
+            .case-button {
+                font-size: 0.8em;
+                padding: 6px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* Even smaller screens */
+            .countdown-timer {
+                gap: 5px;
+            }
+
+            .time-block {
+                min-width: 50px;
+                padding: 5px;
+            }
+
+            .time-value {
+                font-size: 1em;
+            }
+
+            .time-label {
+                font-size: 0.6em;
+            }
+
+            .performance-summary {
+                gap: 5px;
+            }
+
+            .summary-item {
+                padding: 5px;
+            }
+
+            .summary-value {
+                font-size: 1em;
+            }
+
+            .summary-label {
+                font-size: 0.6em;
+            }
+
+            .widget {
+                padding: 10px;
+            }
+
+            /* Even smaller screens */
+            .case-map-header.topic {
+                font-size: 1em;
+                padding: 8px;
+            }
+
+            .case-map-header.category {
+                font-size: 0.85em;
+                padding: 6px 6px 6px 10px;
+            }
+
+            .case-map-header.subcategory {
+                font-size: 0.8em;
+                padding: 4px 4px 4px 8px;
+            }
+
+            .case-item {
+                font-size: 0.75em;
+                padding: 6px;
+            }
+
+            .progress-count {
+                font-size: 0.65em;
+                min-width: 30px;
+                height: 20px;
+            }
+
+            .domain-score {
+                font-size: 0.55em;
+                min-width: 30px;
+                padding: 0px 3px;
+            }
+
+            .case-button {
+                font-size: 0.75em;
+                padding: 4px 10px;
+            }
+        }
+
+        .welcome-message {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+
+        .welcome-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .action-buttons {
+            text-align: center;
+            padding: 30px !important;
+        }
+
+        .main-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .main-action-btn {
+            padding: 20px 40px;
+            font-size: 1.2em;
+            background-color: white;
+            border: 4px solid black;
+            border-radius: 0;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 8px 8px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-width: 300px;
+        }
+
+        .main-action-btn:hover {
+            transform: translate(-4px, -4px);
+            box-shadow: 12px 12px 0 black;
+        }
+
+        .practice-options {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .practice-option-btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            background-color: white;
+            border: 3px solid black;
+            border-radius: 0;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 6px 6px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-width: 250px;
+        }
+
+        .practice-option-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0 black;
+        }
+
+        .practice-option-btn.back-btn {
+            background-color: #f0f0f0;
+        }
+
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .main-actions {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .main-action-btn {
+                padding: 15px 30px;
+                font-size: 1.1em;
+                min-width: auto;
+                width: 100%;
+            }
+
+            .practice-options {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .practice-option-btn {
+                padding: 12px 24px;
+                font-size: 1em;
+                min-width: auto;
+                width: 100%;
+            }
+        }
+
+        /* Add these new styles for the loading state */
+        .main-action-btn.loading,
+        .practice-option-btn.loading {
+            position: relative;
+            color: transparent;  /* Hide button text while loading */
+        }
+
+        .main-action-btn.loading::after,
+        .practice-option-btn.loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin: -8px 0 0 -8px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #000;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Streak Widget Styles */
+        .streak-widget {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none !important;
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .streak-widget:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(255, 107, 107, 0.3);
+        }
+
+        .streak-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .streak-flame {
+            font-size: 3em;
+            animation: flame 1.5s ease-in-out infinite alternate;
+        }
+
+        .streak-info {
+            flex-grow: 1;
+        }
+
+        .streak-count {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .streak-subtitle {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .streak-details {
+            display: flex;
+            gap: 20px;
+            padding-left: 20px;
+            border-left: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .streak-stat {
+            text-align: center;
+        }
+
+        .streak-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .streak-value {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        @keyframes flame {
+            0% {
+                transform: scale(1) rotate(-5deg);
+            }
+            100% {
+                transform: scale(1.1) rotate(5deg);
+            }
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .streak-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .streak-details {
+                padding-left: 0;
+                border-left: none;
+                border-top: 2px solid rgba(255, 255, 255, 0.2);
+                padding-top: 15px;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .streak-flame {
+                font-size: 2.5em;
+            }
+
+            .streak-count {
+                font-size: 1.5em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .streak-details {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        /* Add these styles in the <style> section */
+        .message {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            color: black;
+        }
+
+        .user-message {
+            background-color: #f0f0f0;
+            margin-left: 20%;
+        }
+
+        .assistant-message {
+            background-color: #e8f4f8;
+            margin-right: 20%;
+        }
+
+        .loading-message {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .loading-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: #666;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Add these new styles for the locked case buttons */
+        .case-button.locked {
+            background-color: white;
+            color: black;
+            cursor: pointer;
+        }
+
+        .case-button.locked:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 black;
+        }
+
+        /* Add these styles in the <style> section */
+        .free-tag {
+            background-color: #4BC0C0;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 8px;
+            border: 2px solid black;
+            box-shadow: 2px 2px 0 black;
+        }
+
+        @media (max-width: 768px) {
+            .free-tag {
+                padding: 1px 4px;
+                font-size: 0.7em;
+                margin-right: 6px;
+            }
+        }
+
+        /* Add these styles in the <style> section */
+        .special-sections {
+            display: grid;
+            grid-template-columns: 1fr;  /* Changed from repeat(2, 1fr) to 1fr */
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .special-section {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2));
+            position: relative;
+            overflow: hidden;
+            border: 4px solid black;
+            border-radius: 0;
+            padding: 20px;
+            box-shadow: 8px 8px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 1;
+        }
+
+        .special-section:before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 20%, 
+                rgba(255, 255, 255, 0.1) 20%, 
+                rgba(255, 255, 255, 0.1) 40%, 
+                rgba(255, 255, 255, 0.3) 40%, 
+                rgba(255, 255, 255, 0.3) 60%, 
+                rgba(255, 255, 255, 0.1) 60%, 
+                rgba(255, 255, 255, 0.1) 80%, 
+                transparent 80%
+            );
+            z-index: -1;
+            animation: holographic-shift 4s linear infinite;
+        }
+
+        .special-section:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 124, 189, 0.3) 0%, 
+                rgba(74, 144, 226, 0.3) 50%, 
+                rgba(80, 227, 194, 0.3) 100%);
+            z-index: -2;
+        }
+
+        .special-section:hover {
+            transform: translate(-4px, -4px);
+            box-shadow: 12px 12px 0 black;
+        }
+
+        .special-section-header {
+            position: relative;
+            z-index: 2;
+        }
+
+        .special-section-content {
+            position: relative;
+            z-index: 2;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 2px dashed #ccc;
+            padding: 10px;
+            backdrop-filter: blur(2px);
+        }
+
+        @keyframes holographic-shift {
+            0% {
+                transform: rotate(0deg);
+                opacity: 0.5;
+            }
+            30% {
+                opacity: 0.8;
+            }
+            70% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: rotate(360deg);
+                opacity: 0.5;
+            }
+        }
+
+        .coming-soon-tag {
+            background: linear-gradient(90deg, #ff416c, #ff4b2b, #ff416c);
+            background-size: 200% auto;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 0;
+            font-weight: bold;
+            font-size: 0.9em;
+            border: 2px solid black;
+            box-shadow: 2px 2px 0 black;
+            animation: shimmer 2s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .special-sections {
+                grid-template-columns: 1fr;
+            }
+            
+            .special-section-header h3 {
+                font-size: 1.2em;
+            }
+            
+            .coming-soon-tag {
+                font-size: 0.8em;
+                padding: 3px 8px;
+            }
+        }
+
+        /* Add these styles for the new cases section */
+        .new-cases-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .new-case-item {
+            background-color: white;
+            border: 2px solid black;
+            padding: 10px;
+            box-shadow: 2px 2px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .new-case-item:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0 black;
+        }
+
+        .new-case-item .case-item {
+            margin-bottom: 10px;
+            background-color: #f0f0f0;
+        }
+
+        .new-case-item .case-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 768px) {
+            .new-case-item {
+                padding: 8px;
+            }
+
+            .new-case-item .case-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Fix the duplicate CSS */
+        .free-tag {
+            background-color: #4BC0C0;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 8px;
+            border: 2px solid black;
+            box-shadow: 2px 2px 0 black;
+        }
+
+        /* Add these styles for the search feature */
+        .search-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 1.1em;
+            border: 4px solid black;
+            box-shadow: 4px 4px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+            padding-right: 80px; /* Make room for both icons */
+        }
+
+        .search-input:focus {
+            outline: none;
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 black;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+            cursor: pointer;
+            opacity: 0.7;
+            display: none; /* Hide initially */
+        }
+
+        .clear-search:hover {
+            opacity: 1;
+        }
+
+        .no-results {
+            padding: 20px;
+            text-align: center;
+            background-color: #f0f0f0;
+            border: 3px solid black;
+            box-shadow: 4px 4px 0 black;
+            margin-top: 20px;
+        }
+
+        .highlight {
+            background-color: #ffde59;
+            padding: 0 2px;
+        }
+
+        @media (max-width: 768px) {
+            .search-input {
+                padding: 8px 15px;
+                font-size: 0.9em;
+                padding-right: 70px; /* Adjusted for mobile */
+            }
+            
+            .search-icon {
+                right: 10px;
+                font-size: 1.2em;
+            }
+            
+            .clear-search {
+                right: 40px;
+                font-size: 1.2em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .search-input {
+                padding: 6px 12px;
+                font-size: 0.8em;
+                padding-right: 60px; /* Adjusted for smaller screens */
+            }
+            
+            .clear-search {
+                right: 35px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div id="welcome-message" class="welcome-message"></div>
+        <div class="tabs full-width">
+            <button class="tab active" data-tab="overview">🏠 Home</button>
+            <button class="tab" data-tab="casemap">🗺️ Case Map</button>
+            <button class="tab" data-tab="performance">📈 Progress</button>
+            <button class="tab" data-tab="assistant">🤖 AI Tutor</button>
+        </div>
+
+        <div id="overview" class="tab-content active">
+            <!-- Add the streak widget at the top -->
+            <div class="widget streak-widget">
+                <div class="streak-container">
+                    <div class="streak-flame">🔥</div>
+                    <div class="streak-info">
+                        <div class="streak-count"><span id="streakCount">0</span> Day Streak</div>
+                        <div class="streak-subtitle">Keep practicing daily!</div>
+                    </div>
+                    <div class="streak-details">
+                        <div class="streak-stat">
+                            <div class="streak-label">Best Streak</div>
+                            <div class="streak-value" id="bestStreak">0</div>
+                        </div>
+                        <div class="streak-stat">
+                            <div class="streak-label">Last Practice</div>
+                            <div class="streak-value" id="lastPractice">Never</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Existing action buttons widget -->
+            <div class="widget action-buttons">
+                <div class="main-actions">
+                    <button class="main-action-btn practice-btn">
+                        <span class="emoji">🎯</span>
+                        Practice Random Case
+                    </button>
+                    <button class="main-action-btn view-cases-btn">
+                        <span class="emoji">🗺️</span>
+                        View All Cases
+                    </button>
+                </div>
+                <!-- Practice options dialog -->
+                <div class="practice-options" style="display: none;">
+                    <button class="practice-option-btn partner-btn">
+                        <span class="emoji">👥</span>
+                        Practice with Partner
+                    </button>
+                    <button class="practice-option-btn ai-btn">
+                        <span class="emoji">🤖</span>
+                        Practice with AI
+                    </button>
+                    <button class="practice-option-btn back-btn">
+                        <span class="emoji">↩️</span>
+                        Back
+                    </button>
+                </div>
+            </div>
+
+            <!-- Exam Countdown Widget -->
+            <div id="exam-countdown" class="widget">
+                <h2>⏰ Time Until Exam</h2>
+                <div id="exam-date-input">
+                    <input type="date" id="exam-date">
+                    <button id="submit-date">Set Exam Date</button>
+                </div>
+                <div id="countdown-display" style="display: none;">
+                    <div class="countdown-timer">
+                        <div class="time-block">
+                            <div class="time-value" id="days">00</div>
+                            <div class="time-label">Days</div>
+                        </div>
+                        <div class="time-block">
+                            <div class="time-value" id="hours">00</div>
+                            <div class="time-label">Hours</div>
+                        </div>
+                        <div class="time-block">
+                            <div class="time-value" id="minutes">00</div>
+                            <div class="time-label">Minutes</div>
+                        </div>
+                        <div class="time-block">
+                            <div class="time-value" id="seconds">00</div>
+                            <div class="time-label">Seconds</div>
+                        </div>
+                    </div>
+                    <button id="change-date" style="margin-top: 20px;">Change Date</button>
+                </div>
+            </div>
+
+            <!-- Overall Performance Widget -->
+            <div class="widget">
+                <h2>🎯 Overall Performance</h2>
+                <div class="performance-summary">
+                    <div class="summary-item">
+                        <div class="summary-value" id="dataGatheringScore">--%</div>
+                        <div class="summary-label">Data Gathering</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" id="managementScore">--%</div>
+                        <div class="summary-label">Management</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" id="interpersonalScore">--%</div>
+                        <div class="summary-label">Interpersonal Skills</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall Progress Widget -->
+            <div class="widget">
+                <h2>📈 Overall Progress</h2>
+                <div class="progressChartsContainer">
+                    <div class="chart-item">
+                        <h3>Cases Practiced</h3>
+                        <canvas id="progressChartCases"></canvas>
+                    </div>
+                    <div class="chart-item">
+                        <h3>Topics Practiced</h3>
+                        <canvas id="progressChartTopics"></canvas>
+                    </div>
+                    <div class="chart-item">
+                        <h3>Categories Practiced</h3>
+                        <canvas id="progressChartCategories"></canvas>
+                    </div>
+                    <div class="chart-item">
+                        <h3>Subcategories Practiced</h3>
+                        <canvas id="progressChartSubcategories"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="performance" class="tab-content">
+            <!-- Performance Over Time Widget -->
+            <div class="widget">
+                <h2>📅 Performance Over Time</h2>
+                <div class="filter-options">
+                    <button class="filter-btn" data-filter="7">Last 7 Days</button>
+                    <button class="filter-btn" data-filter="28">Last 28 Days</button>
+                    <button class="filter-btn active" data-filter="all">All Time</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="casemap" class="tab-content">
+            <div class="widget full-width">
+                <h2>🗺️ Case Map</h2>
+                
+                <!-- Add search container here -->
+                <div class="search-container">
+                    <input type="text" class="search-input" id="caseSearchInput" placeholder="Search for cases by name...">
+                    <span class="clear-search" id="clearSearch">✖</span>
+                    <span class="search-icon">🔍</span>
+                </div>
+                
+                <!-- Add the new special sections -->
+                <div class="special-sections">
+                    <div class="special-section">
+                        <div class="special-section-header case-map-header" id="newCasesHeader">
+                            <div class="case-map-header-content">
+                                <div class="title-container">
+                                    <h3>✨ New Cases</h3>
+                                    <span class="progress-count" id="newCasesCount">0/0</span>
+                                    <span class="case-map-arrow">▶</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="special-section-content case-map-content" id="newCasesContent">
+                            <!-- New cases will be populated here in hierarchical structure -->
+                        </div>
+                    </div>
+                    
+                    <div class="special-section">
+                        <div class="special-section-header">
+                            <h3>🔥 High Yield Cases 2025</h3>
+                            <span class="coming-soon-tag">Coming Soon!</span>
+                        </div>
+                        <div class="special-section-content">
+                            <p>Carefully selected high-yield cases for 2025 exams.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="domain-legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: #36A2EB;"></span>
+                        <span>Data Gathering</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: #FF6384;"></span>
+                        <span>Management</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: #4BC0C0;"></span>
+                        <span>Interpersonal Skills</span>
+                    </div>
+                </div>
+                <div id="caseMapContainer">
+                    <!-- Topics will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="assistant" class="tab-content">
+            <!-- AI Assistant Chat Widget -->
+            <div class="widget full-width">
+                <h2>🤖 Dr.Turing (Your Personal AI Tutor)</h2>
+                <div id="chat-container">
+                    <div id="chat-messages"></div>
+                    <div id="preset-buttons">
+                        <button class="preset-btn" data-query="Help me improve my data gathering">Improve Data Gathering</button>
+                        <button class="preset-btn" data-query="Help me improve my interpersonal skills">Improve Interpersonal Skills</button>
+                        <button class="preset-btn" data-query="How can I improve my Management?">Improve Management</button>
+                        <button class="preset-btn" data-query="Give me some general tips for OSCE">General OSCE Tips</button>
+                        <button class="preset-btn" data-query="What are common mistakes to avoid?">Common Mistakes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add this at the top of your script section
+        let caseStructureCache = null;
+
+        // Declare a variable to store the user responses used for generating progress info
+        let caseMapUserResponses = null;
+
+        // First, add this near the top of your script section where other global variables are declared
+        let currentUserPlan = null;
+        let userAllowedTopics = null;
+
+        // Modify the document.addEventListener('DOMContentLoaded') section
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeExamCountdown();
+            initializeCharts();
+            initializeChat();
+            initializeInDepthPerformance();
+            initializeSearch(); // Initialize search
+            
+            // Initialize the new buttons
+            initializeActionButtons();
+        });
+
+        // Global variables
+        let countdownInterval;
+        let progressChartCases, progressChartTopics, progressChartCategories, progressChartSubcategories, timelineChart;
+        let progressDetailChart;
+        let currentProgressLevel = 'topic';
+        let progressChartData = {
+            topic: { labels: [], totalCases: [], completedCases: [] },
+            category: { labels: [], totalCases: [], completedCases: [], topicMapping: {} },
+            subcategory: { labels: [], totalCases: [], completedCases: [], topicMapping: {} }
+        };
+        let progressTopics = [];
+        let selectedProgressTopics = [];
+
+        // Chat functionality
+        function initializeChat() {
+            const chatMessages = document.getElementById('chat-messages');
+            const presetButtons = document.querySelectorAll('.preset-btn');
+
+            presetButtons.forEach(button => {
+                button.addEventListener('click', () => sendPresetMessage(button.dataset.query));
+            });
+        }
+
+        function sendPresetMessage(query) {
+            addMessageToChat('user', query);
+            disableAllButtons();
+            // Add loading message
+            const loadingMessage = addLoadingMessage();
+            handleUserMessage(query);
+        }
+
+        function addMessageToChat(role, content) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', `${role}-message`);
+            if (role === 'user') {
+                messageElement.textContent = content;
+            } else {
+                messageElement.innerHTML = marked.parse(content);
+            }
+            document.getElementById('chat-messages').appendChild(messageElement);
+            messageElement.scrollIntoView({ behavior: 'smooth' });
+            return messageElement;
+        }
+
+        // Add new function to create loading message
+        function addLoadingMessage() {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', 'assistant-message', 'loading-message');
+            messageElement.innerHTML = `
+                AI is thinking
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            document.getElementById('chat-messages').appendChild(messageElement);
+            messageElement.scrollIntoView({ behavior: 'smooth' });
+            return messageElement;
+        }
+
+        // Exam countdown functionality
+        function initializeExamCountdown() {
+            const examDateInput = document.getElementById('exam-date');
+            const submitDateBtn = document.getElementById('submit-date');
+            const changeDateBtn = document.getElementById('change-date');
+            const countdownDisplay = document.getElementById('countdown-display');
+            const examDateInputDiv = document.getElementById('exam-date-input');
+
+            submitDateBtn.addEventListener('click', function() {
+                const examDate = new Date(examDateInput.value);
+                if (examDate) {
+                    startCountdown(examDate);
+                    // Integrate with backend to save date
+                    saveExamDate(examDateInput.value);
+                }
+            });
+
+            changeDateBtn.addEventListener('click', function() {
+                countdownDisplay.style.display = 'none';
+                examDateInputDiv.style.display = 'block';
+                clearInterval(countdownInterval);
+            });
+        }
+
+        function updateCountdown(examDate) {
+            const now = new Date();
+            const timeLeft = examDate - now;
+
+            if (timeLeft < 0) {
+                clearInterval(countdownInterval);
+                return;
+            }
+
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            document.getElementById('days').textContent = days.toString().padStart(2, '0');
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        }
+
+        // Charts initialization
+        function initializeCharts() {
+            initializeCasesChart();
+            initializeTopicsChart();
+            initializeCategoriesChart();
+            initializeSubcategoriesChart();
+            initializeTimelineChart();
+        }
+
+        function initializeCasesChart() {
+            const ctx = document.getElementById('progressChartCases').getContext('2d');
+            progressChartCases = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Remaining'],
+                    datasets: [{
+                        data: [0, 1],
+                        backgroundColor: ['#36A2EB', '#E7E9ED']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false  // Hide legend
+                        },
+                        tooltip: {
+                            enabled: true
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    afterDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const width = chart.width;
+                        const height = chart.height;
+                        ctx.restore();
+                        
+                        const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                        const completed = chart.data.datasets[0].data[0];
+                        const text = `${completed}/${total}`;
+                        
+                        ctx.font = '16px Helvetica Neue';
+                        ctx.textBaseline = 'middle';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(text, width/2, height/2);
+                        ctx.save();
+                    }
+                }]
+            });
+        }
+
+        function initializeTopicsChart() {
+            const ctx = document.getElementById('progressChartTopics').getContext('2d');
+            progressChartTopics = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Practiced', 'Remaining'],
+                    datasets: [{
+                        data: [0, 1],
+                        backgroundColor: ['#36A2EB', '#E7E9ED']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false  // Hide legend
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    afterDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const width = chart.width;
+                        const height = chart.height;
+                        ctx.restore();
+                        
+                        const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                        const completed = chart.data.datasets[0].data[0];
+                        const text = `${completed}/${total}`;
+                        
+                        ctx.font = '16px Helvetica Neue';
+                        ctx.textBaseline = 'middle';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(text, width/2, height/2);
+                        ctx.save();
+                    }
+                }]
+            });
+        }
+
+        function initializeCategoriesChart() {
+            const ctx = document.getElementById('progressChartCategories').getContext('2d');
+            progressChartCategories = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Practiced', 'Remaining'],
+                    datasets: [{
+                        data: [0, 1],
+                        backgroundColor: ['#FF6384', '#E7E9ED']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false  // Hide legend
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    afterDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const width = chart.width;
+                        const height = chart.height;
+                        ctx.restore();
+                        
+                        const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                        const completed = chart.data.datasets[0].data[0];
+                        const text = `${completed}/${total}`;
+                        
+                        ctx.font = '16px Helvetica Neue';
+                        ctx.textBaseline = 'middle';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(text, width/2, height/2);
+                        ctx.save();
+                    }
+                }]
+            });
+        }
+
+        function initializeSubcategoriesChart() {
+            const ctx = document.getElementById('progressChartSubcategories').getContext('2d');
+            progressChartSubcategories = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Practiced', 'Remaining'],
+                    datasets: [{
+                        data: [0, 1],
+                        backgroundColor: ['#4BC0C0', '#E7E9ED']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false  // Hide legend
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    afterDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const width = chart.width;
+                        const height = chart.height;
+                        ctx.restore();
+                        
+                        const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                        const completed = chart.data.datasets[0].data[0];
+                        const text = `${completed}/${total}`;
+                        
+                        ctx.font = '16px Helvetica Neue';
+                        ctx.textBaseline = 'middle';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(text, width/2, height/2);
+                        ctx.save();
+                    }
+                }]
+            });
+        }
+
+        function initializeTimelineChart() {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            timelineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Data Gathering',
+                            data: [],
+                            borderColor: '#36A2EB'
+                        },
+                        {
+                            label: 'Management',
+                            data: [],
+                            borderColor: '#FF6384'
+                        },
+                        {
+                            label: 'Interpersonal Skills',
+                            data: [],
+                            borderColor: '#4BC0C0'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 4
+                        }
+                    }
+                }
+            });
+        }
+
+        // Performance data handling
+        function updatePerformanceData(data) {
+            if (!data) return;
+            
+            // Update domain scores if they exist
+            if (data.domain) {
+                const domainMapping = {
+                    dataGathering: 'dataGatheringScore',
+                    management: 'managementScore',
+                    interpersonalSkills: 'interpersonalScore'
+                };
+
+                Object.entries(domainMapping).forEach(([dataKey, elementId]) => {
+                    const score = data.domain[dataKey];
+                    const element = document.getElementById(elementId);
+                    if (element) {
+                        element.textContent = score.toFixed(1) + '/4';  // Display score out of 4
+                    }
+                });
+            }
+
+            // Update the cases practiced donut chart using data.progress from updateDashboard
+            if (data.progress) {
+                updateCasesChart(data.progress);
+            }
+            
+            // Update the timeline chart
+            if (data.overTime) {
+                updateTimelineChart(data.overTime);
+            }
+        }
+
+        // Add event listeners for filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                filterTimelineData(this.dataset.filter);
+            });
+        });
+
+        // Backend integration functions
+        function handleUserMessage(message) {
+            // Post message to parent window (Wix) to handle the API call
+            window.parent.postMessage({
+                type: 'aiChat',
+                data: message
+            }, '*');
+        }
+
+        function enableAllButtons() {
+            document.querySelectorAll('.preset-btn').forEach(button => button.disabled = false);
+        }
+
+        function disableAllButtons() {
+            document.querySelectorAll('.preset-btn').forEach(button => button.disabled = true);
+        }
+
+        // Create a message handler for the parent window
+        window.onmessage = function(event) {
+            const { type, data } = event.data;
+            
+            switch(type) {
+                case 'initializeExamDate':
+                    const examDate = new Date(data);
+                    document.getElementById('exam-date').value = data;
+                    startCountdown(examDate);
+                    break;
+                case 'updateDashboard':
+                    updatePerformanceData(data);
+                    break;
+                case 'initializeCaseMap':
+                    // Store the case structure and user responses
+                    caseStructureCache = data.caseStructure;
+                    caseMapUserResponses = data.userResponses;
+                    // Don't initialize yet - wait for plan info if we don't have it
+                    if (userAllowedTopics) {
+                        initializeCaseMap();
+                    } else {
+                        window.parent.postMessage({ type: 'getCurrentPlan' }, '*');
+                    }
+                    break;
+                case 'updateProgressChart':
+                    // This message (from dashboardV2.js) sends the detailed progress data (for topics, categories, subcategories)
+                    updateAllDonutCharts(data);
+                    break;
+                case 'welcomeUser':
+                    const welcomeMessage = document.getElementById('welcome-message');
+                    welcomeMessage.textContent = `Welcome, ${data}!`;
+                    welcomeMessage.classList.add('show');
+                    break;
+                case 'updateStreak':
+                    const streakCount = document.getElementById('streakCount');
+                    const bestStreak = document.getElementById('bestStreak');
+                    const lastPractice = document.getElementById('lastPractice');
+                    
+                    if (streakCount) streakCount.textContent = data.currentStreak;
+                    if (bestStreak) bestStreak.textContent = data.bestStreak;
+                    if (lastPractice) lastPractice.textContent = data.lastPractice;
+                    
+                    // Add flame animation class if streak > 0
+                    const streakWidget = document.querySelector('.streak-widget');
+                    if (streakWidget) {
+                        if (data.currentStreak > 0) {
+                            streakWidget.classList.add('active-streak');
+                        } else {
+                            streakWidget.classList.remove('active-streak');
+                        }
+                    }
+                    break;
+                case 'aiChatResponse':
+                    // Remove any loading messages
+                    const loadingMessages = document.querySelectorAll('.loading-message');
+                    loadingMessages.forEach(msg => msg.remove());
+                    
+                    // Add the actual response
+                    addMessageToChat('assistant', data);
+                    enableAllButtons();
+                    break;
+                case 'setPlanAndTopics':
+                    currentUserPlan = data.plan;
+                    userAllowedTopics = data.allowedTopics || []; // Ensure it's at least an empty array
+                    // Now that we have the plan info, initialize the case map if we have the case structure
+                    if (caseStructureCache) {
+                        initializeCaseMap();
+                    }
+                    break;
+            }
+        };
+
+        function startCountdown(examDate) {
+            // Clear any existing countdown
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            // Show countdown display and hide input
+            document.getElementById('countdown-display').style.display = 'block';
+            document.getElementById('exam-date-input').style.display = 'none';
+
+            // Start the countdown
+            updateCountdown(examDate);
+            countdownInterval = setInterval(() => updateCountdown(examDate), 1000);
+        }
+
+        // Add this new function
+        function saveExamDate(date) {
+            // Send message to parent window to save the date
+            window.parent.postMessage({
+                type: 'saveExamDate',
+                data: date
+            }, '*');
+        }
+
+        function initializeTopicPerformance() {
+            const topicContainer = document.getElementById('topicPerformance');
+            if (!topicContainer) return;
+            
+            // Initialize with empty state
+            topicContainer.innerHTML = '<p>No topic performance data available</p>';
+        }
+
+        function updateCasesChart(data) {
+            if (!data || !progressChartCases) return;
+            const completed = data.completed;
+            const total = data.total;
+            const remaining = total - completed;
+            progressChartCases.data.datasets[0].data = [completed, remaining];
+            progressChartCases.update();
+        }
+
+        function updateTopicsChart(topicData) {
+            if (!topicData || !progressChartTopics) return;
+            let practiced = topicData.completedCases.filter(count => count > 0).length;
+            let total = topicData.labels.length;
+            let remaining = total - practiced;
+            progressChartTopics.data.datasets[0].data = [practiced, remaining];
+            progressChartTopics.update();
+        }
+
+        function updateCategoriesChart(categoryData) {
+            if (!categoryData || !progressChartCategories) return;
+            let practiced = categoryData.completedCases.filter(count => count > 0).length;
+            let total = categoryData.labels.length;
+            let remaining = total - practiced;
+            progressChartCategories.data.datasets[0].data = [practiced, remaining];
+            progressChartCategories.update();
+        }
+
+        function updateSubcategoriesChart(subcategoryData) {
+            if (!subcategoryData || !progressChartSubcategories) return;
+            let practiced = subcategoryData.completedCases.filter(count => count > 0).length;
+            let total = subcategoryData.labels.length;
+            let remaining = total - practiced;
+            progressChartSubcategories.data.datasets[0].data = [practiced, remaining];
+            progressChartSubcategories.update();
+        }
+
+        function updateAllDonutCharts(progressData) {
+            if (progressData.topic) {
+                updateTopicsChart(progressData.topic);
+            }
+            if (progressData.category) {
+                updateCategoriesChart(progressData.category);
+            }
+            if (progressData.subcategory) {
+                updateSubcategoriesChart(progressData.subcategory);
+            }
+        }
+
+        function updateTimelineChart(timelineData, isInitialData = true) {
+            if (!timelineData || !timelineChart) return;
+            
+            // Only store the full data when it's the initial data
+            if (isInitialData) {
+                timelineChart.fullData = {
+                    labels: [...timelineData.labels],
+                    dataGathering: [...timelineData.dataGathering],
+                    management: [...timelineData.management],
+                    interpersonalSkills: [...timelineData.interpersonalSkills]
+                };
+            }
+            
+            // Update chart with the provided data
+            timelineChart.data.labels = timelineData.labels;
+            timelineChart.data.datasets[0].data = timelineData.dataGathering;
+            timelineChart.data.datasets[1].data = timelineData.management;
+            timelineChart.data.datasets[2].data = timelineData.interpersonalSkills;
+            
+            timelineChart.update();
+        }
+
+        function filterTimelineData(filter) {
+            if (!timelineChart || !timelineChart.fullData) return;
+            
+            const data = timelineChart.fullData; // Always use the original full data
+            let filteredData = {
+                labels: [...data.labels],
+                dataGathering: [...data.dataGathering],
+                management: [...data.management],
+                interpersonalSkills: [...data.interpersonalSkills]
+            };
+
+            if (filter !== 'all') {
+                const days = parseInt(filter);
+                const cutoff = filteredData.labels.length - days;
+                if (cutoff > 0) {
+                    filteredData.labels = filteredData.labels.slice(cutoff);
+                    filteredData.dataGathering = filteredData.dataGathering.slice(cutoff);
+                    filteredData.management = filteredData.management.slice(cutoff);
+                    filteredData.interpersonalSkills = filteredData.interpersonalSkills.slice(cutoff);
+                }
+            }
+
+            updateTimelineChart(filteredData, false); // Pass false to indicate this is filtered data
+        }
+
+        function initializeInDepthPerformance() {
+            const performanceContainer = document.getElementById('performance-widget');
+            if (!performanceContainer) return;
+            
+            // Initialize with empty state or loading state
+            updateInDepthPerformance({
+                summary: {
+                    overallScore: 0,
+                    casesCompleted: 0
+                },
+                domain: {
+                    dataGathering: 0,
+                    management: 0,
+                    interpersonalSkills: 0
+                },
+                topics: []
+            });
+        }
+
+        function updateInDepthPerformance(data) {
+            if (!data) return;
+
+            // Update summary metrics if they exist
+            if (data.summary) {
+                const overallPercentage = ((data.summary.overallScore / 12) * 100).toFixed(1);
+                document.querySelector('.summary-value').textContent = `${overallPercentage}%`;
+            }
+
+            // Update topic performance if it exists
+            if (data.topics) {
+                updateTopicPerformance(data.topics);
+            }
+        }
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        function updateProgressDetailChart(level, labels, totalCases, completedCases, communityAverages, topicMapping = {}) {
+            progressChartData[level] = { labels, totalCases, completedCases, communityAverages, topicMapping };
+            if (level === 'topic') {
+                progressTopics = labels;
+                selectedProgressTopics = [...progressTopics];
+                updateProgressTopicFilter();
+            }
+            renderProgressDetailChart(level);
+        }
+
+        function renderProgressDetailChart(level = 'topic') {
+            currentProgressLevel = level;
+            const ctx = document.getElementById('progressDetailChart').getContext('2d');
+            const data = progressChartData[level];
+
+            let filteredLabels, filteredTotalCases, filteredCompletedCases, filteredCommunityAverages;
+            if (data.labels.length > 0 && level !== 'topic' && selectedProgressTopics.length > 0) {
+                const filteredIndices = data.labels.map((_, index) => 
+                    selectedProgressTopics.includes(data.topicMapping[index])
+                );
+                filteredLabels = data.labels.filter((_, index) => filteredIndices[index]);
+                filteredTotalCases = data.totalCases.filter((_, index) => filteredIndices[index]);
+                filteredCompletedCases = data.completedCases.filter((_, index) => filteredIndices[index]);
+                filteredCommunityAverages = (data.communityAverages || []).filter((_, index) => filteredIndices[index]);
+            } else {
+                filteredLabels = data.labels;
+                filteredTotalCases = data.totalCases;
+                filteredCompletedCases = data.completedCases;
+                filteredCommunityAverages = data.communityAverages || [];
+            }
+
+            if (progressDetailChart) {
+                progressDetailChart.destroy();
+            }
+
+            progressDetailChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: filteredLabels,
+                    datasets: [{
+                        label: 'Completed Cases',
+                        data: filteredCompletedCases,
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Remaining Cases',
+                        data: filteredTotalCases.map((total, index) => total - filteredCompletedCases[index]),
+                        backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterBody: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return `Community Average: ${filteredCommunityAverages[index].toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('topicFilter').style.display = level === 'topic' ? 'none' : 'block';
+            document.querySelectorAll('.level-button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.level === level);
+            });
+        }
+
+        function updateProgressTopicFilter() {
+            const filterContainer = document.getElementById('topicFilter');
+            filterContainer.innerHTML = '<h3>Filter by Topics</h3>';
+            progressTopics.forEach(topic => {
+                const filterItem = document.createElement('div');
+                filterItem.className = 'filter-item';
+                filterItem.innerHTML = `
+                    <input type="checkbox" id="${topic}" value="${topic}" ${selectedProgressTopics.includes(topic) ? 'checked' : ''}>
+                    <label for="${topic}">${topic}</label>
+                `;
+                filterContainer.appendChild(filterItem);
+            });
+
+            filterContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectedProgressTopics.push(this.value);
+                    } else {
+                        selectedProgressTopics = selectedProgressTopics.filter(topic => topic !== this.value);
+                    }
+                    renderProgressDetailChart(currentProgressLevel);
+                });
+            });
+        }
+
+        // Add event listeners for level buttons
+        document.querySelectorAll('.level-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const buttonGroup = this.closest('.button-group');
+                buttonGroup.querySelectorAll('.level-button').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                renderProgressDetailChart(this.dataset.level);
+            });
+        });
+
+        function initializeCaseMap() {
+            if (!caseStructureCache) {
+                console.error("Case structure cache is not initialized");
+                return;
+            }
+
+            // If we don't have the user's plan info yet, request it and return
+            if (!userAllowedTopics) {
+                window.parent.postMessage({ type: 'getCurrentPlan' }, '*');
+                return;
+            }
+
+            const caseMapContainer = document.getElementById('caseMapContainer');
+            if (!caseMapContainer) {
+                console.error("Case map container not found");
+                return;
+            }
+            
+            // Clear any existing content
+            caseMapContainer.innerHTML = '';
+            
+            // Group cases by topic, category, and subcategory while adding a "completed" flag
+            const caseMap = {};
+            
+            // First, handle new cases
+            const newCasesContent = document.getElementById('newCasesContent');
+            const newCasesHeader = document.getElementById('newCasesHeader');
+            const newCasesCount = document.getElementById('newCasesCount');
+            if (newCasesContent && newCasesHeader) {
+                const newCases = caseStructureCache.filter(caseItem => caseItem.isNewCase);
+                if (newCases.length > 0) {
+                    // Update the count display
+                    const completedNewCases = newCases.filter(caseItem => 
+                        caseMapUserResponses &&
+                        caseMapUserResponses.responses &&
+                        caseMapUserResponses.responses[caseItem.caseName] &&
+                        caseMapUserResponses.responses[caseItem.caseName].length > 0
+                    ).length;
+                    newCasesCount.textContent = `${completedNewCases}/${newCases.length}`;
+
+                    // Group new cases by topic, category, and subcategory
+                    const newCaseMap = {};
+                    
+                    newCases.forEach(caseItem => {
+                        const topic = caseItem.topicFormatted;
+                        const category = caseItem.categoryFormatted;
+                        const subcategory = caseItem.subCategoryFormatted;
+
+                        if (!newCaseMap[topic]) {
+                            newCaseMap[topic] = {
+                                categories: {},
+                                progress: { total: 0, completed: 0 }
+                            };
+                        }
+
+                        if (!newCaseMap[topic].categories[category]) {
+                            newCaseMap[topic].categories[category] = {
+                                subcategories: {},
+                                cases: [],
+                                progress: { total: 0, completed: 0 }
+                            };
+                        }
+
+                        if (category !== subcategory) {
+                            if (!newCaseMap[topic].categories[category].subcategories[subcategory]) {
+                                newCaseMap[topic].categories[category].subcategories[subcategory] = {
+                                    cases: [],
+                                    progress: { total: 0, completed: 0 }
+                                };
+                            }
+                        }
+
+                        const isCompleted = caseMapUserResponses &&
+                            caseMapUserResponses.responses &&
+                            caseMapUserResponses.responses[caseItem.caseName] &&
+                            caseMapUserResponses.responses[caseItem.caseName].length > 0;
+
+                        const caseObj = {
+                            name: caseItem.displayCaseName,
+                            caseName: caseItem.caseName,
+                            completed: isCompleted,
+                            topic: caseItem.topic
+                        };
+
+                        // Update progress at all levels
+                        newCaseMap[topic].progress.total++;
+                        if (isCompleted) newCaseMap[topic].progress.completed++;
+
+                        newCaseMap[topic].categories[category].progress.total++;
+                        if (isCompleted) newCaseMap[topic].categories[category].progress.completed++;
+
+                        if (category !== subcategory) {
+                            newCaseMap[topic].categories[category].subcategories[subcategory].progress.total++;
+                            if (isCompleted) newCaseMap[topic].categories[category].subcategories[subcategory].progress.completed++;
+                            newCaseMap[topic].categories[category].subcategories[subcategory].cases.push(caseObj);
+                        } else {
+                            newCaseMap[topic].categories[category].cases.push(caseObj);
+                        }
+                    });
+
+                    // Create the hierarchical structure
+                    Object.entries(newCaseMap).forEach(([topic, topicData]) => {
+                        const topicElement = createMapItem(
+                            topic,
+                            'topic',
+                            `${topicData.progress.completed}/${topicData.progress.total}`
+                        );
+                        const topicContent = document.createElement('div');
+                        topicContent.className = 'case-map-content';
+
+                        Object.entries(topicData.categories).forEach(([category, categoryData]) => {
+                            const categoryElement = createMapItem(
+                                category,
+                                'category',
+                                `${categoryData.progress.completed}/${categoryData.progress.total}`
+                            );
+                            const categoryContent = document.createElement('div');
+                            categoryContent.className = 'case-map-content';
+
+                            if (Object.keys(categoryData.subcategories).length > 0) {
+                                Object.entries(categoryData.subcategories).forEach(([subcategory, subcategoryData]) => {
+                                    const subcategoryElement = createMapItem(
+                                        subcategory,
+                                        'subcategory',
+                                        `${subcategoryData.progress.completed}/${subcategoryData.progress.total}`
+                                    );
+                                    const subcategoryContent = document.createElement('div');
+                                    subcategoryContent.className = 'case-map-content';
+
+                                    subcategoryData.cases.forEach(caseObj => {
+                                        const caseElement = createCaseElement(caseObj);
+                                        subcategoryContent.appendChild(caseElement);
+                                    });
+
+                                    subcategoryElement.appendChild(subcategoryContent);
+                                    categoryContent.appendChild(subcategoryElement);
+                                });
+                            } else {
+                                categoryData.cases.forEach(caseObj => {
+                                    const caseElement = createCaseElement(caseObj);
+                                    categoryContent.appendChild(caseElement);
+                                });
+                            }
+
+                            categoryElement.appendChild(categoryContent);
+                            topicContent.appendChild(categoryElement);
+                        });
+
+                        topicElement.appendChild(topicContent);
+                        newCasesContent.appendChild(topicElement);
+                    });
+
+                    // Add click handler for new cases section
+                    newCasesHeader.addEventListener('click', () => {
+                        newCasesHeader.querySelector('.case-map-arrow').classList.toggle('active');
+                        newCasesContent.classList.toggle('active');
+                    });
+                } else {
+                    newCasesContent.innerHTML = '<p>No new cases available at the moment.</p>';
+                }
+            }
+            
+            // Continue with the rest of the case map initialization
+            caseStructureCache.forEach(caseItem => {
+                const topic = caseItem.topicFormatted;
+                const category = caseItem.categoryFormatted;
+                const subcategory = caseItem.subCategoryFormatted;
+
+                // Initialize domain scores structure
+                const initDomainScores = () => ({
+                    dataGathering: [],
+                    management: [],
+                    interpersonalSkills: []
+                });
+
+                // Initialize case map structure with domain scores
+                if (!caseMap[topic]) {
+                    caseMap[topic] = {
+                        cases: [],
+                        domainScores: initDomainScores(),
+                        progress: { completed: 0, total: 0 }
+                    };
+                }
+
+                if (!caseMap[topic].categories) {
+                    caseMap[topic].categories = {};
+                }
+
+                if (!caseMap[topic].categories[category]) {
+                    caseMap[topic].categories[category] = {
+                        cases: [],
+                        domainScores: initDomainScores(),
+                        progress: { completed: 0, total: 0 }
+                    };
+                }
+
+                if (category !== subcategory) {
+                    if (!caseMap[topic].categories[category].subcategories) {
+                        caseMap[topic].categories[category].subcategories = {};
+                    }
+                    if (!caseMap[topic].categories[category].subcategories[subcategory]) {
+                        caseMap[topic].categories[category].subcategories[subcategory] = {
+                            cases: [],
+                            domainScores: initDomainScores(),
+                            progress: { completed: 0, total: 0 }
+                        };
+                    }
+                }
+
+                // Add case and update progress/scores
+                const isCompleted = caseMapUserResponses &&
+                    caseMapUserResponses.responses &&
+                    caseMapUserResponses.responses[caseItem.caseName] &&
+                    caseMapUserResponses.responses[caseItem.caseName].length > 0;
+
+                const caseObj = { name: caseItem.displayCaseName, completed: isCompleted };
+
+                // Update topic level
+                caseMap[topic].progress.total++;
+                if (isCompleted) {
+                    caseMap[topic].progress.completed++;
+                    const latestResponse = caseMapUserResponses.responses[caseItem.caseName].slice(-1)[0];
+                    caseMap[topic].domainScores.dataGathering.push(parseFloat(latestResponse.dataGathering.score));
+                    caseMap[topic].domainScores.management.push(parseFloat(latestResponse.management.score));
+                    caseMap[topic].domainScores.interpersonalSkills.push(parseFloat(latestResponse.interpersonalSkills.score));
+                }
+
+                // Update category level
+                caseMap[topic].categories[category].progress.total++;
+                if (isCompleted) {
+                    caseMap[topic].categories[category].progress.completed++;
+                    const latestResponse = caseMapUserResponses.responses[caseItem.caseName].slice(-1)[0];
+                    caseMap[topic].categories[category].domainScores.dataGathering.push(parseFloat(latestResponse.dataGathering.score));
+                    caseMap[topic].categories[category].domainScores.management.push(parseFloat(latestResponse.management.score));
+                    caseMap[topic].categories[category].domainScores.interpersonalSkills.push(parseFloat(latestResponse.interpersonalSkills.score));
+                }
+
+                // Update subcategory level if different from category
+                if (category !== subcategory) {
+                    caseMap[topic].categories[category].subcategories[subcategory].progress.total++;
+                    if (isCompleted) {
+                        caseMap[topic].categories[category].subcategories[subcategory].progress.completed++;
+                        const latestResponse = caseMapUserResponses.responses[caseItem.caseName].slice(-1)[0];
+                        caseMap[topic].categories[category].subcategories[subcategory].domainScores.dataGathering.push(parseFloat(latestResponse.dataGathering.score));
+                        caseMap[topic].categories[category].subcategories[subcategory].domainScores.management.push(parseFloat(latestResponse.management.score));
+                        caseMap[topic].categories[category].subcategories[subcategory].domainScores.interpersonalSkills.push(parseFloat(latestResponse.interpersonalSkills.score));
+                    }
+                    caseMap[topic].categories[category].subcategories[subcategory].cases.push(caseObj);
+                } else {
+                    caseMap[topic].categories[category].cases.push(caseObj);
+                }
+            });
+
+            // Calculate averages for domain scores
+            const calculateAverages = (scores) => {
+                const result = {};
+                Object.keys(scores).forEach(domain => {
+                    result[domain] = scores[domain].length > 0 
+                        ? scores[domain].reduce((a, b) => a + b, 0) / scores[domain].length 
+                        : 0;
+                });
+                return result;
+            };
+
+            // Build the HTML structure
+            // Sort topics to put "Breaking Bad News" first
+            const sortedTopics = Object.entries(caseMap).sort(([topicA], [topicB]) => {
+                if (topicA === "Breaking Bad News") return -1;
+                if (topicB === "Breaking Bad News") return 1;
+                return topicA.localeCompare(topicB);
+            });
+
+            sortedTopics.forEach(([topic, topicData]) => {
+                const averageScores = calculateAverages(topicData.domainScores);
+                const topicElement = createMapItem(
+                    topic,
+                    'topic',
+                    `${topicData.progress.completed}/${topicData.progress.total}`,
+                    averageScores,
+                    topic === "Breaking Bad News" // Pass flag for Breaking Bad News topic
+                );
+                const topicContent = document.createElement('div');
+                topicContent.className = 'case-map-content';
+
+                if (topicData.categories) {
+                    Object.entries(topicData.categories).forEach(([category, categoryData]) => {
+                        const categoryAverages = calculateAverages(categoryData.domainScores);
+                        const categoryElement = createMapItem(
+                            category,
+                            'category',
+                            `${categoryData.progress.completed}/${categoryData.progress.total}`,
+                            categoryAverages
+                        );
+                        const categoryContent = document.createElement('div');
+                        categoryContent.className = 'case-map-content';
+
+                        if (categoryData.subcategories) {
+                            Object.entries(categoryData.subcategories).forEach(([subcategory, subcategoryData]) => {
+                                const subcategoryAverages = calculateAverages(subcategoryData.domainScores);
+                                const subcategoryElement = createMapItem(
+                                    subcategory,
+                                    'subcategory',
+                                    `${subcategoryData.progress.completed}/${subcategoryData.progress.total}`,
+                                    subcategoryAverages
+                                );
+                                const subcategoryContent = document.createElement('div');
+                                subcategoryContent.className = 'case-map-content';
+
+                                subcategoryData.cases.forEach(caseObj => {
+                                    const caseWrapper = document.createElement('div');
+                                    
+                                    const caseElement = document.createElement('div');
+                                    caseElement.className = `case-item${caseObj.completed ? ' completed-case' : ''}`;
+                                    caseElement.textContent = caseObj.name;
+                                    
+                                    const buttonContainer = document.createElement('div');
+                                    buttonContainer.className = 'case-buttons';
+                                    
+                                    // Find the original case to get the topic
+                                    const originalCase = caseStructureCache.find(c => c.displayCaseName === caseObj.name);
+                                    const hasCaseAccess = originalCase && userAllowedTopics.includes(originalCase.topic);
+                                    
+                                    const reviewButton = document.createElement('button');
+                                    reviewButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
+                                    if (!hasCaseAccess) {
+                                        reviewButton.innerHTML = '🔒 Review the Case';
+                                        reviewButton.title = 'Upgrade your plan to access this case';
+                                        reviewButton.onclick = (e) => {
+                                            e.stopPropagation();
+                                            window.parent.postMessage({
+                                                type: 'navigate',
+                                                data: { url: '/plans-pricing' }
+                                            }, '*');
+                                        };
+                                    } else {
+                                        reviewButton.innerHTML = '📖 Review the Case';
+                                        reviewButton.onclick = (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                                reviewButton.classList.add('loading');
+                                                if (originalCase) {
+                                                    window.parent.postMessage({
+                                                        type: 'navigate',
+                                                        data: {
+                                                            url: `/osce-workbench?case=${encodeURIComponent(originalCase.caseName)}`
+                                                        }
+                                                    }, '*');
+                                                }
+                                            } catch (error) {
+                                                console.error('Navigation error:', error);
+                                                reviewButton.classList.remove('loading');
+                                            }
+                                        };
+                                    }
+
+                                    const partnerButton = document.createElement('button');
+                                    partnerButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
+                                    if (!hasCaseAccess) {
+                                        partnerButton.innerHTML = '🔒 Practice with Partner';
+                                        partnerButton.title = 'Upgrade your plan to access this case';
+                                        partnerButton.onclick = (e) => {
+                                            e.stopPropagation();
+                                            window.parent.postMessage({
+                                                type: 'navigate',
+                                                data: { url: '/plans-pricing' }
+                                            }, '*');
+                                        };
+                                    } else {
+                                        partnerButton.innerHTML = '👥 Practice with Partner';
+                                        partnerButton.onclick = (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                                partnerButton.classList.add('loading');
+                                                if (originalCase) {
+                                                    window.parent.postMessage({
+                                                        type: 'navigate',
+                                                        data: {
+                                                            url: `/osce-workbench?case=${encodeURIComponent(originalCase.caseName)}&mode=1`
+                                                        }
+                                                    }, '*');
+                                                }
+                                            } catch (error) {
+                                                console.error('Navigation error:', error);
+                                                partnerButton.classList.remove('loading');
+                                            }
+                                        };
+                                    }
+                                    
+                                    const aiButton = document.createElement('button');
+                                    aiButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
+                                    if (!hasCaseAccess) {
+                                        aiButton.innerHTML = '🔒 Practice with AI';
+                                        aiButton.title = 'Upgrade your plan to access this case';
+                                        aiButton.onclick = (e) => {
+                                            e.stopPropagation();
+                                            window.parent.postMessage({
+                                                type: 'navigate',
+                                                data: { url: '/plans-pricing' }
+                                            }, '*');
+                                        };
+                                    } else {
+                                        aiButton.innerHTML = '🤖 Practice with AI';
+                                        aiButton.onclick = (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                                aiButton.classList.add('loading');
+                                                if (originalCase) {
+                                                    window.parent.postMessage({
+                                                        type: 'navigate',
+                                                        data: {
+                                                            url: `/patientgpt?case=${encodeURIComponent(originalCase.caseName)}`
+                                                        }
+                                                    }, '*');
+                                                }
+                                            } catch (error) {
+                                                console.error('Navigation error:', error);
+                                                aiButton.classList.remove('loading');
+                                            }
+                                        };
+                                    }
+                                    
+                                    buttonContainer.appendChild(reviewButton);
+                                    buttonContainer.appendChild(partnerButton);
+                                    buttonContainer.appendChild(aiButton);
+                                    
+                                    caseWrapper.appendChild(caseElement);
+                                    caseWrapper.appendChild(buttonContainer);
+                                    
+                                    caseElement.addEventListener('click', (e) => {
+                                        e.stopPropagation();
+                                        const allButtons = subcategoryContent.querySelectorAll('.case-buttons');
+                                        allButtons.forEach(btn => {
+                                            if (btn !== buttonContainer) btn.classList.remove('active');
+                                        });
+                                        buttonContainer.classList.toggle('active');
+                                    });
+                                    
+                                    subcategoryContent.appendChild(caseWrapper);
+                                });
+
+                                subcategoryElement.appendChild(subcategoryContent);
+                                categoryContent.appendChild(subcategoryElement);
+                            });
+                        }
+
+                        categoryData.cases.forEach(caseObj => {
+                            const caseWrapper = document.createElement('div');
+                            
+                            const caseElement = document.createElement('div');
+                            caseElement.className = `case-item${caseObj.completed ? ' completed-case' : ''}`;
+                            caseElement.textContent = caseObj.name;
+                            
+                            const buttonContainer = document.createElement('div');
+                            buttonContainer.className = 'case-buttons';
+                            
+                            // Find the original case to get the topic
+                            const originalCase = caseStructureCache.find(c => c.displayCaseName === caseObj.name);
+                            const hasCaseAccess = originalCase && userAllowedTopics.includes(originalCase.topic);
+                            
+                            const reviewButton = document.createElement('button');
+                            reviewButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
+                            if (!hasCaseAccess) {
+                                reviewButton.innerHTML = '🔒 Review the Case';
+                                reviewButton.title = 'Upgrade your plan to access this case';
+                                reviewButton.onclick = (e) => {
+                                    e.stopPropagation();
+                                    window.parent.postMessage({
+                                        type: 'navigate',
+                                        data: { url: '/plans-pricing' }
+                                    }, '*');
+                                };
+                            } else {
+                                reviewButton.innerHTML = '📖 Review the Case';
+                                reviewButton.onclick = (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                        reviewButton.classList.add('loading');
+                                        if (originalCase) {
+                                            window.parent.postMessage({
+                                                type: 'navigate',
+                                                data: {
+                                                    url: `/osce-workbench?case=${encodeURIComponent(originalCase.caseName)}`
+                                                }
+                                            }, '*');
+                                        }
+                                    } catch (error) {
+                                        console.error('Navigation error:', error);
+                                        reviewButton.classList.remove('loading');
+                                    }
+                                };
+                            }
+
+                            const partnerButton = document.createElement('button');
+                            partnerButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
+                            if (!hasCaseAccess) {
+                                partnerButton.innerHTML = '🔒 Practice with Partner';
+                                partnerButton.title = 'Upgrade your plan to access this case';
+                                partnerButton.onclick = (e) => {
+                                    e.stopPropagation();
+                                    window.parent.postMessage({
+                                        type: 'navigate',
+                                        data: { url: '/plans-pricing' }
+                                    }, '*');
+                                };
+                            } else {
+                                partnerButton.innerHTML = '👥 Practice with Partner';
+                                partnerButton.onclick = (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                        partnerButton.classList.add('loading');
+                                        if (originalCase) {
+                                            window.parent.postMessage({
+                                                type: 'navigate',
+                                                data: {
+                                                    url: `/osce-workbench?case=${encodeURIComponent(originalCase.caseName)}&mode=1`
+                                                }
+                                            }, '*');
+                                        }
+                                    } catch (error) {
+                                        console.error('Navigation error:', error);
+                                        partnerButton.classList.remove('loading');
+                                    }
+                                };
+                            }
+                            
+                            const aiButton = document.createElement('button');
+                            aiButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
+                            if (!hasCaseAccess) {
+                                aiButton.innerHTML = '🔒 Practice with AI';
+                                aiButton.title = 'Upgrade your plan to access this case';
+                                aiButton.onclick = (e) => {
+                                    e.stopPropagation();
+                                    window.parent.postMessage({
+                                        type: 'navigate',
+                                        data: { url: '/plans-pricing' }
+                                    }, '*');
+                                };
+                            } else {
+                                aiButton.innerHTML = '🤖 Practice with AI';
+                                aiButton.onclick = (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                        aiButton.classList.add('loading');
+                                        if (originalCase) {
+                                            window.parent.postMessage({
+                                                type: 'navigate',
+                                                data: {
+                                                    url: `/patientgpt?case=${encodeURIComponent(originalCase.caseName)}`
+                                                }
+                                            }, '*');
+                                        }
+                                    } catch (error) {
+                                        console.error('Navigation error:', error);
+                                        aiButton.classList.remove('loading');
+                                    }
+                                };
+                            }
+
+                            buttonContainer.appendChild(reviewButton);
+                            buttonContainer.appendChild(partnerButton);
+                            buttonContainer.appendChild(aiButton);
+                            
+                            caseWrapper.appendChild(caseElement);
+                            caseWrapper.appendChild(buttonContainer);
+                            
+                            caseElement.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const allButtons = categoryContent.querySelectorAll('.case-buttons');
+                                allButtons.forEach(btn => {
+                                    if (btn !== buttonContainer) btn.classList.remove('active');
+                                });
+                                buttonContainer.classList.toggle('active');
+                            });
+                            
+                            categoryContent.appendChild(caseWrapper);
+                        });
+
+                        categoryElement.appendChild(categoryContent);
+                        topicContent.appendChild(categoryElement);
+                    });
+                }
+
+                topicElement.appendChild(topicContent);
+                caseMapContainer.appendChild(topicElement);
+            });
+        }
+
+        function createMapItem(title, level, progressInfo, domainScores = null, isBreakingBadNews = false) {
+            const itemContainer = document.createElement('div');
+            itemContainer.className = 'case-map-item';
+            
+            const header = document.createElement('div');
+            header.className = `case-map-header ${level}`;
+            
+            const progressBarBg = document.createElement('div');
+            progressBarBg.className = 'progress-bar-background';
+            
+            const progressBarFill = document.createElement('div');
+            progressBarFill.className = 'progress-bar-fill';
+            
+            if (progressInfo) {
+                const [completed, total] = progressInfo.split('/').map(Number);
+                const percentage = (completed / total) * 100;
+                progressBarFill.style.width = `${percentage}%`;
+            }
+            
+            const headerContent = document.createElement('div');
+            headerContent.className = 'case-map-header-content';
+            
+            const titleContainer = document.createElement('div');
+            titleContainer.className = 'title-container';
+            
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = title;
+            
+            // Add FREE tag if it's Breaking Bad News topic
+            if (isBreakingBadNews) {
+                const freeTag = document.createElement('span');
+                freeTag.className = 'free-tag';
+                freeTag.textContent = 'FREE';
+                titleContainer.appendChild(freeTag);
+            }
+            
+            titleContainer.appendChild(titleSpan);
+            
+            const progressCount = document.createElement('span');
+            progressCount.className = 'progress-count';
+            progressCount.textContent = progressInfo;
+            
+            titleContainer.appendChild(progressCount);
+            
+            const scoresContainer = document.createElement('div');
+            scoresContainer.className = 'domain-scores';
+            
+            if (domainScores) {
+                const domains = [
+                    { key: 'dataGathering', class: 'data-gathering' },
+                    { key: 'management', class: 'management' },
+                    { key: 'interpersonalSkills', class: 'interpersonal' }
+                ];
+                
+                domains.forEach(domain => {
+                    if (domainScores[domain.key] !== undefined) {
+                        const scoreSpan = document.createElement('span');
+                        scoreSpan.className = `domain-score ${domain.class}`;
+                        scoreSpan.textContent = domainScores[domain.key].toFixed(1);
+                        scoresContainer.appendChild(scoreSpan);
+                    }
+                });
+            }
+            
+            const arrow = document.createElement('span');
+            arrow.className = 'case-map-arrow';
+            arrow.textContent = '▶';
+            
+            headerContent.appendChild(titleContainer);
+            headerContent.appendChild(scoresContainer);
+            headerContent.appendChild(arrow);
+            
+            header.appendChild(progressBarBg);
+            header.appendChild(progressBarFill);
+            header.appendChild(headerContent);
+            
+            header.addEventListener('click', () => {
+                const content = header.nextElementSibling;
+                const arrow = header.querySelector('.case-map-arrow');
+                
+                // If this is a topic-level header
+                if (level === 'topic') {
+                    // Close all other topics
+                    const allTopics = document.querySelectorAll('.case-map-header.topic');
+                    allTopics.forEach(topicHeader => {
+                        if (topicHeader !== header) {
+                            const topicContent = topicHeader.nextElementSibling;
+                            const topicArrow = topicHeader.querySelector('.case-map-arrow');
+                            topicContent.classList.remove('active');
+                            topicArrow.classList.remove('active');
+                        }
+                    });
+                }
+                
+                // Toggle the clicked item
+                content.classList.toggle('active');
+                arrow.classList.toggle('active');
+            });
+            
+            itemContainer.appendChild(header);
+            return itemContainer;
+        }
+
+        function initializeActionButtons() {
+            const practiceBtn = document.querySelector('.practice-btn');
+            const viewCasesBtn = document.querySelector('.view-cases-btn');
+            const practiceOptions = document.querySelector('.practice-options');
+            const mainActions = document.querySelector('.main-actions');
+            const partnerBtn = document.querySelector('.partner-btn');
+            const aiBtn = document.querySelector('.ai-btn');
+            const backBtn = document.querySelector('.back-btn');
+
+            practiceBtn.addEventListener('click', () => {
+                mainActions.style.display = 'none';
+                practiceOptions.style.display = 'flex';
+            });
+
+            viewCasesBtn.addEventListener('click', () => {
+                // Switch to the case map tab
+                document.querySelector('[data-tab="casemap"]').click();
+            });
+
+            // Remove hardcoded allowed topics and use the user's plan topics instead
+            partnerBtn.addEventListener('click', () => {
+                navigateToRandomCase('partner');
+            });
+
+            aiBtn.addEventListener('click', () => {
+                navigateToRandomCase('ai');
+            });
+
+            backBtn.addEventListener('click', () => {
+                practiceOptions.style.display = 'none';
+                mainActions.style.display = 'flex';
+            });
+        }
+
+        function navigateToRandomCase(mode) {
+            if (!caseStructureCache || !caseStructureCache.length) {
+                console.error('Case structure not loaded');
+                return;
+            }
+
+            // Add loading state to the clicked button
+            const button = mode === 'partner' ? document.querySelector('.partner-btn') : document.querySelector('.ai-btn');
+            button.classList.add('loading');
+
+            // Filter cases to only include those from the user's allowed topics (based on their plan)
+            const eligibleCases = caseStructureCache.filter(caseItem => 
+                userAllowedTopics && userAllowedTopics.includes(caseItem.topic)
+            );
+
+            if (eligibleCases.length === 0) {
+                console.error('No cases found for the user\'s plan');
+                button.classList.remove('loading'); // Remove loading state if error
+                return;
+            }
+
+            // Select a random case from the filtered list
+            const randomIndex = Math.floor(Math.random() * eligibleCases.length);
+            const randomCase = eligibleCases[randomIndex];
+
+            // Navigate to the appropriate URL
+            const url = mode === 'partner' 
+                ? `/osce-workbench?case=${encodeURIComponent(randomCase.caseName)}&mode=1`
+                : `/patientgpt?case=${encodeURIComponent(randomCase.caseName)}`;
+
+            try {
+                window.parent.postMessage({
+                    type: 'navigate',
+                    data: { url }
+                }, '*');
+            } catch (error) {
+                console.error('Navigation error:', error);
+                button.classList.remove('loading'); // Remove loading state if error
+            }
+        }
+
+        function createCaseElement(caseObj) {
+            const caseWrapper = document.createElement('div');
+            caseWrapper.className = 'case-item-wrapper';
+            
+            const caseElement = document.createElement('div');
+            caseElement.className = `case-item${caseObj.completed ? ' completed-case' : ''}`;
+            caseElement.textContent = caseObj.name;
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'case-buttons';
+            
+            const hasCaseAccess = userAllowedTopics.includes(caseObj.topic);
+            
+            // Create Review button
+            const reviewButton = document.createElement('button');
+            reviewButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
+            if (!hasCaseAccess) {
+                reviewButton.innerHTML = '🔒 Review the Case';
+                reviewButton.title = 'Upgrade your plan to access this case';
+                reviewButton.onclick = (e) => {
+                    e.stopPropagation();
+                    window.parent.postMessage({
+                        type: 'navigate',
+                        data: { url: '/plans-pricing' }
+                    }, '*');
+                };
+            } else {
+                reviewButton.innerHTML = '📖 Review the Case';
+                reviewButton.onclick = (e) => {
+                    e.stopPropagation();
+                    try {
+                        reviewButton.classList.add('loading');
+                        window.parent.postMessage({
+                            type: 'navigate',
+                            data: {
+                                url: `/osce-workbench?case=${encodeURIComponent(caseObj.caseName)}`
+                            }
+                        }, '*');
+                    } catch (error) {
+                        console.error('Navigation error:', error);
+                        reviewButton.classList.remove('loading');
+                    }
+                };
+            }
+
+            // Create Partner Practice button
+            const partnerButton = document.createElement('button');
+            partnerButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
+            if (!hasCaseAccess) {
+                partnerButton.innerHTML = '🔒 Partner Practice';
+                partnerButton.title = 'Upgrade your plan to access this case';
+                partnerButton.onclick = (e) => {
+                    e.stopPropagation();
+                    window.parent.postMessage({
+                        type: 'navigate',
+                        data: { url: '/plans-pricing' }
+                    }, '*');
+                };
+            } else {
+                partnerButton.innerHTML = '👥 Partner Practice';
+                partnerButton.onclick = (e) => {
+                    e.stopPropagation();
+                    try {
+                        partnerButton.classList.add('loading');
+                        window.parent.postMessage({
+                            type: 'navigate',
+                            data: {
+                                url: `/osce-workbench?case=${encodeURIComponent(caseObj.caseName)}&mode=1`
+                            }
+                        }, '*');
+                    } catch (error) {
+                        console.error('Navigation error:', error);
+                        partnerButton.classList.remove('loading');
+                    }
+                };
+            }
+
+            // Create AI Practice button
+            const aiButton = document.createElement('button');
+            aiButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
+            if (!hasCaseAccess) {
+                aiButton.innerHTML = '🔒 AI Practice';
+                aiButton.title = 'Upgrade your plan to access this case';
+                aiButton.onclick = (e) => {
+                    e.stopPropagation();
+                    window.parent.postMessage({
+                        type: 'navigate',
+                        data: { url: '/plans-pricing' }
+                    }, '*');
+                };
+            } else {
+                aiButton.innerHTML = '🤖 AI Practice';
+                aiButton.onclick = (e) => {
+                    e.stopPropagation();
+                    try {
+                        aiButton.classList.add('loading');
+                        window.parent.postMessage({
+                            type: 'navigate',
+                            data: {
+                                url: `/patientgpt?case=${encodeURIComponent(caseObj.caseName)}`
+                            }
+                        }, '*');
+                    } catch (error) {
+                        console.error('Navigation error:', error);
+                        aiButton.classList.remove('loading');
+                    }
+                };
+            }
+
+            buttonContainer.appendChild(reviewButton);
+            buttonContainer.appendChild(partnerButton);
+            buttonContainer.appendChild(aiButton);
+            
+            caseElement.addEventListener('click', () => {
+                buttonContainer.classList.toggle('active');
+            });
+            
+            caseWrapper.appendChild(caseElement);
+            caseWrapper.appendChild(buttonContainer);
+            return caseWrapper;
+        }
+
+        // Add the search functionality
+        function initializeSearch() {
+            const searchInput = document.getElementById('caseSearchInput');
+            const clearButton = document.getElementById('clearSearch');
+            if (!searchInput || !clearButton) return;
+            
+            searchInput.addEventListener('input', () => {
+                handleSearchInput();
+                // Show/hide clear button based on input
+                clearButton.style.display = searchInput.value.trim() ? 'block' : 'none';
+            });
+            
+            clearButton.addEventListener('click', () => {
+                searchInput.value = '';
+                handleSearchInput();
+                clearButton.style.display = 'none';
+                searchInput.focus();
+            });
+        }
+        
+        function handleSearchInput() {
+            const searchTerm = document.getElementById('caseSearchInput').value.trim().toLowerCase();
+            
+            if (!caseStructureCache) {
+                console.error("Case structure cache not initialized");
+                return;
+            }
+            
+            // Show or hide case map sections based on search term
+            const allCaseItems = document.querySelectorAll('.case-item');
+            const allMapItems = document.querySelectorAll('.case-map-item');
+            const noResultsElement = document.getElementById('noSearchResults');
+            
+            if (searchTerm === '') {
+                // If search is empty, show everything and reset UI
+                resetSearchUI(allCaseItems, allMapItems, noResultsElement);
+                return;
+            }
+            
+            // Hide all case map items initially
+            allMapItems.forEach(item => {
+                item.style.display = 'none';
+            });
+            
+            // Filter and highlight matching cases
+            let resultsFound = false;
+            
+            allCaseItems.forEach(item => {
+                const caseName = item.textContent.toLowerCase();
+                
+                // Find the corresponding case object in the caseStructureCache
+                const displayName = item.textContent;
+                const originalCase = caseStructureCache.find(c => c.displayCaseName === displayName);
+                
+                // Check if the case name matches OR any of the synonyms match
+                const nameMatches = caseName.includes(searchTerm);
+                const hasSynonyms = originalCase && originalCase.synonyms && Array.isArray(originalCase.synonyms);
+                const synonymMatches = hasSynonyms ? 
+                    originalCase.synonyms.some(syn => syn.toLowerCase().includes(searchTerm)) : 
+                    false;
+                
+                if (nameMatches || synonymMatches) {
+                    // Show this case
+                    item.style.display = '';
+                    resultsFound = true;
+                    
+                    // Highlight the matching text in the case name if it matches
+                    if (nameMatches) {
+                        const regex = new RegExp(`(${searchTerm})`, 'gi');
+                        item.innerHTML = item.textContent.replace(regex, '<span class="highlight">$1</span>');
+                    }
+                    
+                    // Show all parent containers
+                    let parent = item.parentElement;
+                    while (parent && !parent.classList.contains('widget')) {
+                        if (parent.classList.contains('case-map-content')) {
+                            parent.classList.add('active');
+                        }
+                        if (parent.classList.contains('case-map-item')) {
+                            parent.style.display = '';
+                        }
+                        if (parent.classList.contains('case-map-header')) {
+                            const arrow = parent.querySelector('.case-map-arrow');
+                            if (arrow) arrow.classList.add('active');
+                        }
+                        parent = parent.parentElement;
+                    }
+                    
+                    // Add synonym indicator if matched by synonym and not by name
+                    if (synonymMatches && !nameMatches && hasSynonyms) {
+                        // Find the matching synonyms to display
+                        const matchingSynonyms = originalCase.synonyms
+                            .filter(syn => syn.toLowerCase().includes(searchTerm))
+                            .join(', ');
+                        
+                        // Add a small indicator that this was matched by synonym
+                        const indicator = document.createElement('small');
+                        indicator.style.marginLeft = '5px';
+                        indicator.style.opacity = '0.7';
+                        indicator.innerHTML = ` (matched: ${matchingSynonyms})`;
+                        item.appendChild(indicator);
+                    }
+                } else {
+                    // Hide this case
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show "no results" message if needed
+            if (!resultsFound) {
+                if (!noResultsElement) {
+                    const message = document.createElement('div');
+                    message.id = 'noSearchResults';
+                    message.className = 'no-results';
+                    message.innerHTML = `No cases found matching "<strong>${searchTerm}</strong>"`;
+                    document.getElementById('caseMapContainer').appendChild(message);
+                }
+            } else if (noResultsElement) {
+                noResultsElement.remove();
+            }
+        }
+
+        // Add helper function to reset search UI
+        function resetSearchUI(caseItems, mapItems, noResultsElement) {
+            // Show all case items and remove highlighting
+            caseItems.forEach(item => {
+                item.style.display = '';
+                item.innerHTML = item.textContent;
+            });
+            
+            // Show all map items
+            mapItems.forEach(item => {
+                item.style.display = '';
+            });
+            
+            // Collapse all sections back to normal state
+            document.querySelectorAll('.case-map-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.case-map-arrow').forEach(arrow => {
+                arrow.classList.remove('active');
+            });
+            
+            // Remove "no results" message if it exists
+            if (noResultsElement) {
+                noResultsElement.remove();
+            }
+        }
+    </script>
+</body>
+</html> 

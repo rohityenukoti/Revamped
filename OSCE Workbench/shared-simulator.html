@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSCE Shared Simulator</title>
+    <script src="https://meet.jit.si/external_api.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #FFDE59;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .main-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .simulator-box {
+            background-color: white;
+            border: 3px solid #000;
+            border-radius: 0px;
+            box-shadow: 7px 7px 0px #000;
+            padding: 20px;
+        }
+        
+        .simulator-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            color: #000;
+            border-bottom: 3px solid #000;
+            padding-bottom: 5px;
+        }
+        
+        .video-container {
+            position: relative;
+            height: 400px;
+            overflow: hidden;
+            background-color: #f0f0f0;
+            margin-bottom: 20px;
+            border: 3px solid #000;
+            display: none; /* Hide video container by default */
+        }
+        
+        #jitsi-container {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #000;
+            border-top: 5px solid #FFDE59;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .patient-info, .checklist-container {
+            margin-bottom: 20px;
+        }
+        
+        .patient-info-grid {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .patient-info-item {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+        }
+        
+        .patient-info-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .patient-info-item strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #000;
+            font-size: 1.1em;
+        }
+        
+        .checklist-domain {
+            margin-bottom: 20px;
+        }
+        
+        .checklist-domain h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            color: #000;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 5px;
+            padding: 8px;
+            border-radius: 0px;
+            background-color: #f9f9f9;
+        }
+        
+        .checklist-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .checklist-item input[type="checkbox"] {
+            margin-right: 10px;
+            min-width: 18px;
+            height: 18px;
+            border: 2px solid #000;
+            border-radius: 0px;
+            position: relative;
+            top: 2px;
+        }
+        
+        .checklist-item label {
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .submit-button {
+            background-color: #FFDE59;
+            color: #000;
+            border: 3px solid #000;
+            padding: 15px 25px;
+            border-radius: 0px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 5px 5px 0px #000;
+            font-size: 1.1em;
+            display: block;
+            margin: 20px auto;
+            max-width: 200px;
+            text-align: center;
+        }
+        
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 7px 7px 0px #000;
+        }
+        
+        .submit-button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 3px 3px 0px #000;
+        }
+        
+        .error-container, .success-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            color: white;
+            border-radius: 0px;
+            border: 3px solid #000;
+            box-shadow: 5px 5px 0px #000;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .error-container {
+            background-color: #ff6666;
+        }
+        
+        .success-container {
+            background-color: #66cc66;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(-50%) translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .video-container {
+                height: 300px;
+            }
+        }
+        
+        .main-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .error-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #FFDE59;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .error-screen > div {
+            background: white;
+            padding: 30px;
+            border: 3px solid #000;
+            border-radius: 0px;
+            box-shadow: 7px 7px 0px #000;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .action-button {
+            background-color: #FFDE59;
+            color: #000;
+            border: 3px solid #000;
+            padding: 10px 20px;
+            border-radius: 0px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 4px 4px 0px #000;
+            margin-top: 20px;
+        }
+        
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 0px #000;
+        }
+        
+        #start-video-btn {
+            background-color: #FFDE59;
+            color: #000;
+            border: 3px solid #000;
+            padding: 15px 25px;
+            border-radius: 0px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 5px 5px 0px #000;
+            font-size: 1.1em;
+            display: block;
+            margin: 0 auto 20px;
+            max-width: 200px;
+            text-align: center;
+        }
+        
+        #start-video-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 7px 7px 0px #000;
+        }
+        
+        #start-video-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 3px 3px 0px #000;
+        }
+
+        .score-summary {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border: 3px solid #000;
+            border-radius: 0px;
+            box-shadow: 7px 7px 0px #000;
+        }
+
+        .score-summary-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            color: #000;
+            border-bottom: 3px solid #000;
+            padding-bottom: 5px;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .score-item:last-of-type {
+            border-bottom: none;
+            margin-bottom: 10px;
+        }
+
+        .score-label {
+            font-weight: bold;
+            color: #000;
+        }
+
+        .score-value {
+            background-color: #f0f0f0;
+            padding: 5px 15px;
+            border-radius: 0px;
+            border: 2px solid #000;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Error and success messages -->
+    <div id="errorContainer" class="error-container"></div>
+    <div id="successContainer" class="success-container"></div>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="main-column">
+                <!-- Video container -->
+                <div class="simulator-box">
+                    <div class="simulator-title">Video Call</div>
+                    <button id="start-video-btn">Start Video Call</button>
+                    <div class="video-container">
+                        <div id="jitsi-container"></div>
+                        <div class="loading-screen" id="loadingScreen">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Patient Information -->
+                <div class="simulator-box">
+                    <div class="simulator-title">Patient Information</div>
+                    <div class="patient-info">
+                        <div class="patient-info-grid" id="patientInfoGrid">
+                            <!-- Patient information will be loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="main-column">
+                <!-- Examiner Checklist -->
+                <div class="simulator-box">
+                    <div class="simulator-title">Examiner Checklist</div>
+                    <div class="checklist-container">
+                        <!-- Data Gathering Section -->
+                        <div class="checklist-domain">
+                            <h3>Data Gathering</h3>
+                            <div id="dataGatheringChecklist">
+                                <!-- Checklist items will be loaded dynamically -->
+                            </div>
+                        </div>
+                        
+                        <!-- Management Section -->
+                        <div class="checklist-domain">
+                            <h3>Management</h3>
+                            <div id="managementChecklist">
+                                <!-- Checklist items will be loaded dynamically -->
+                            </div>
+                        </div>
+                        
+                        <!-- Interpersonal Skills Section -->
+                        <div class="checklist-domain">
+                            <h3>Interpersonal Skills</h3>
+                            <div id="interpersonalSkillsChecklist">
+                                <!-- Checklist items will be loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Score Summary Box -->
+                <div class="simulator-box">
+                    <div class="simulator-title">Score Summary</div>
+                    <div class="score-summary">
+                        <div class="score-item">
+                            <span class="score-label">Data Gathering</span>
+                            <span class="score-value" id="dataGatheringScore">0.00</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Management</span>
+                            <span class="score-value" id="managementScore">0.00</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Interpersonal Skills</span>
+                            <span class="score-value" id="interpersonalSkillsScore">0.00</span>
+                        </div>
+                        <button id="submitBtn" class="submit-button">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading states -->
+    <div class="loading-screen main-loading" id="mainLoadingScreen">
+        <div class="spinner"></div>
+        <div style="margin-top: 20px; text-align: center;">
+            <h3 style="margin-bottom: 10px;">Loading case data...</h3>
+            <p>Please wait while we prepare your simulator.</p>
+        </div>
+    </div>
+    
+    <!-- Error state -->
+    <div class="error-screen" id="errorScreen" style="display: none;">
+        <div style="text-align: center;">
+            <h3 style="margin-bottom: 15px;">Error Loading Case</h3>
+            <p id="errorScreenMessage">We couldn't find the requested case. Please check the URL and try again.</p>
+            <button class="action-button" onclick="window.location.href='https://turingmedschool.com'">Return to Homepage</button>
+        </div>
+    </div>
+    
+    <script>
+        // State variables
+        let state = {
+            caseIndex: null,
+            userEmail: null,
+            roomName: null,
+            checklist: {
+                dataGathering: {
+                    points: [],
+                    booleanArray: []
+                },
+                management: {
+                    points: [],
+                    booleanArray: []
+                },
+                interpersonalSkills: {
+                    points: [],
+                    booleanArray: []
+                }
+            },
+            jitsiApi: null,
+            submitting: false,
+            loading: true,
+            hasInitializedJitsi: false,
+            videoContainerShown: false
+        };
+        
+        // DOM Elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const submitBtn = document.getElementById('submitBtn');
+        const patientInfoGrid = document.getElementById('patientInfoGrid');
+        const dataGatheringChecklist = document.getElementById('dataGatheringChecklist');
+        const managementChecklist = document.getElementById('managementChecklist');
+        const interpersonalSkillsChecklist = document.getElementById('interpersonalSkillsChecklist');
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // console.log("DOM loaded in HTML component");
+            // console.log("Running in iframe:", window.self !== window.top);
+            
+            try {
+                // console.log("Parent URL:", window.parent.location.href);
+            } catch (e) {
+                // console.log("Cannot access parent URL due to cross-origin restrictions");
+            }
+            
+            // Don't try to read URL parameters immediately
+            // Instead, wait for data from parent and show loading screen
+            document.getElementById('mainLoadingScreen').style.display = 'flex';
+            
+            // Set up event listeners for the parent page
+            setupEventListeners();
+            
+            // Signal to parent that we're ready to receive data
+            // console.log("Posting simulatorReady message to parent");
+            try {
+                // Use '*' to allow cross-origin communication
+                window.parent.postMessage({ type: 'simulatorReady' }, '*');
+                // console.log("simulatorReady message posted successfully");
+            } catch (error) {
+                console.error("Error posting message to parent:", error);
+            }
+        });
+        
+        // Function to update patient information UI
+        function updatePatientInfo(info) {
+            // console.log("Updating patient info UI with:", info);
+            patientInfoGrid.innerHTML = '';
+            
+            // Add the full patient information as rich text if it exists
+            if (info.fullInfo) {
+                const fullInfoItem = document.createElement('div');
+                fullInfoItem.className = 'patient-info-item';
+                
+                // Use innerHTML to preserve HTML formatting
+                fullInfoItem.innerHTML = info.fullInfo;
+                
+                patientInfoGrid.appendChild(fullInfoItem);
+            } else {
+                // Display a message if no patient info is available
+                const noInfoItem = document.createElement('div');
+                noInfoItem.className = 'patient-info-item';
+                noInfoItem.textContent = 'No patient information available.';
+                patientInfoGrid.appendChild(noInfoItem);
+            }
+            // console.log("Patient info UI updated");
+        }
+        
+        // Function to update checklist UI
+        function updateChecklistUI(data) {
+            // console.log("Updating checklist UI with data:", data);
+            // Clear previous checklist items
+            dataGatheringChecklist.innerHTML = '';
+            managementChecklist.innerHTML = '';
+            interpersonalSkillsChecklist.innerHTML = '';
+            
+            // Reset state
+            state.checklist = {
+                dataGathering: {
+                    points: data.dataGathering || [],
+                    booleanArray: new Array((data.dataGathering || []).length).fill(false)
+                },
+                management: {
+                    points: data.management || [],
+                    booleanArray: new Array((data.management || []).length).fill(false)
+                },
+                interpersonalSkills: {
+                    points: data.interpersonalSkills || [],
+                    booleanArray: new Array((data.interpersonalSkills || []).length).fill(false)
+                }
+            };
+            
+            // Generate checklist items for each domain
+            createChecklistItems(dataGatheringChecklist, state.checklist.dataGathering.points, 'dataGathering');
+            createChecklistItems(managementChecklist, state.checklist.management.points, 'management');
+            createChecklistItems(interpersonalSkillsChecklist, state.checklist.interpersonalSkills.points, 'interpersonalSkills');
+            // console.log("Checklist UI updated with", 
+            //            state.checklist.dataGathering.points.length, 
+            //            state.checklist.management.points.length, 
+            //            state.checklist.interpersonalSkills.points.length, 
+            //            "items");
+        }
+        
+        // Function to create checklist items
+        function createChecklistItems(container, items, domain) {
+            items.forEach((item, index) => {
+                const checklistItem = document.createElement('div');
+                checklistItem.className = 'checklist-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `${domain}-${index}`;
+                checkbox.addEventListener('change', (e) => {
+                    //console.log(`Checkbox changed in ${domain} at index ${index}. New value:`, e.target.checked);
+                    // Update state when checkbox is changed
+                    state.checklist[domain].booleanArray[index] = e.target.checked;
+                    //console.log(`Updated boolean array for ${domain}:`, state.checklist[domain].booleanArray);
+                    
+                    // Calculate and update scores immediately
+                    updateScores();
+                });
+                
+                const label = document.createElement('label');
+                label.htmlFor = `${domain}-${index}`;
+                label.textContent = item;
+                
+                checklistItem.appendChild(checkbox);
+                checklistItem.appendChild(label);
+                container.appendChild(checklistItem);
+            });
+        }
+        
+        // Function to update scores in the UI
+        function updateScores() {
+            //console.log("Updating scores...");
+            const dataGatheringScore = calculateScore(state.checklist.dataGathering.booleanArray);
+            const managementScore = calculateScore(state.checklist.management.booleanArray);
+            const interpersonalSkillsScore = calculateScore(state.checklist.interpersonalSkills.booleanArray);
+            
+            //console.log("Calculated scores: " + 
+            //    JSON.stringify({
+            //        dataGathering: dataGatheringScore,
+            //        management: managementScore,
+            //        interpersonalSkills: interpersonalSkillsScore
+            //    })
+            //);
+
+            // Update score display
+            document.getElementById('dataGatheringScore').textContent = dataGatheringScore;
+            document.getElementById('managementScore').textContent = managementScore;
+            document.getElementById('interpersonalSkillsScore').textContent = interpersonalSkillsScore;
+        }
+        
+        // Function to calculate the score for a domain (scaled to max of 4)
+        function calculateScore(booleanArray) {
+            if (!booleanArray || booleanArray.length === 0) {
+                //console.log("Invalid boolean array for score calculation:", booleanArray);
+                return "0";
+            }
+            
+            // Count the number of true values
+            const trueCount = booleanArray.filter(Boolean).length;
+            //console.log("True count:", trueCount, "out of", booleanArray.length, "items");
+            
+            // Calculate raw score as percentage of items checked
+            const rawScore = trueCount / booleanArray.length;
+            
+            // Scale to max of 4 and round to nearest integer
+            const scaledScore = Math.round(rawScore * 4);
+            //console.log("Raw score:", rawScore, "Scaled score:", scaledScore);
+            
+            // Return the score as a string
+            return scaledScore.toString();
+        }
+        
+        // Function to initialize Jitsi
+        function initializeJitsiMeet() {
+            // Prevent multiple initializations
+            if (state.hasInitializedJitsi || !state.roomName) {
+                // console.log("Jitsi already initialized or no room name, skipping initialization");
+                return;
+            }
+            
+            // console.log("Initializing Jitsi meet with room:", state.roomName);
+            try {
+                const domain = 'jitsi.dorf-post.de';
+                const options = {
+                    roomName: state.roomName,
+                    width: '100%',
+                    height: '100%',
+                    parentNode: document.getElementById('jitsi-container'),
+                    configOverwrite: {
+                        logging: {
+                            defaultLogLevel: 'error',
+                            loggers: {
+                                'modules/RTC/TraceablePeerConnection.js': 'error',
+                                'modules/xmpp/strophe.util.js': 'error',
+                            },
+                        },
+                        prejoinConfig: {
+                            enabled: false
+                        },
+                        deeplinking: {
+                            disabled: true
+                        }
+                    },
+                    interfaceConfigOverwrite: {
+                        TOOLBAR_BUTTONS: [
+                            'microphone', 'camera', 'closedcaptions', 'desktop', 
+                            'fullscreen', 'fodeviceselection', 'hangup', 'profile', 
+                            'chat', 'recording', 'livestreaming', 'etherpad', 
+                            'sharedvideo', 'settings', 'raisehand', 'videoquality', 
+                            'filmstrip', 'feedback', 'stats', 'shortcuts',
+                            'tileview', 'videobackgroundblur', 'download', 'help',
+                            'mute-everyone', 'security'
+                        ]
+                    }
+                };
+                
+                // console.log("Creating Jitsi API with options:", JSON.stringify(options));
+                state.jitsiApi = new JitsiMeetExternalAPI(domain, options);
+                // Mark as initialized
+                state.hasInitializedJitsi = true;
+                // console.log("Jitsi API created successfully");
+                
+                // Set display name (email)
+                state.jitsiApi.executeCommand('displayName', state.userEmail);
+                
+                // Hide loading screen once the meeting is joined
+                state.jitsiApi.addEventListener('videoConferenceJoined', () => {
+                    // console.log("Video conference joined");
+                    loadingScreen.style.display = 'none';
+                });
+                
+                // Handle video conference left
+                state.jitsiApi.addEventListener('videoConferenceLeft', handleVideoConferenceLeft);
+            } catch (error) {
+                console.error('Error initializing Jitsi:', error);
+                showError('Could not initialize video call. Please refresh the page and try again.', true);
+                loadingScreen.style.display = 'none';
+            }
+        }
+        
+        // Function to set up event listeners
+        function setupEventListeners() {
+            // Submit button click event
+            submitBtn.addEventListener('click', handleSubmit);
+            
+            // Start video button click event
+            document.getElementById('start-video-btn').addEventListener('click', handleStartVideo);
+            
+            // Listen for messages from the parent page
+            window.addEventListener('message', handleParentMessage);
+        }
+        
+        // Handle messages from parent page
+        function handleParentMessage(event) {
+            // console.log("Message received from parent:", event.data?.type, event.data);
+            // console.log("Message origin:", event.origin);
+            
+            // Don't check event origin to allow cross-origin communication
+            if (!event.data || !event.data.type) return;
+            
+            switch (event.data.type) {
+                case 'caseData':
+                    // console.log("Case data received from parent, processing now...");
+                    handleCaseData(event.data.data);
+                    break;
+                    
+                case 'showError':
+                    showError(event.data.message, event.data.isCritical);
+                    break;
+                    
+                case 'submissionSuccess':
+                    handleSubmissionSuccess();
+                    break;
+            }
+        }
+        
+        // Handle case data from parent
+        function handleCaseData(data) {
+            // console.log("Processing case data in handleCaseData:", data);
+            state.loading = false;
+            
+            // Clear the loading timeout since we've received data
+            if (loadTimeoutId) {
+                // console.log("Clearing load timeout - data received");
+                clearTimeout(loadTimeoutId);
+                loadTimeoutId = null;
+            }
+            
+            if (!data) {
+                console.error("No case data received in HTML component");
+                showError("No case data received.", true);
+                return;
+            }
+            
+            try {
+                // console.log("Patient info received:", data.patientInfo);
+                // console.log("Checklist received:", data.checklist);
+                
+                // Update UI with received data
+                updatePatientInfo(data.patientInfo);
+                updateChecklistUI(data.checklist);
+                
+                // Update state variables from parent data
+                state.roomName = data.roomName;
+                state.userEmail = data.userEmail;
+                state.caseIndex = data.caseIndex;
+                
+                // console.log("Updated state in HTML component:", {
+                //     roomName: state.roomName,
+                //     userEmail: state.userEmail,
+                //     caseIndex: state.caseIndex
+                // });
+                
+                // Don't initialize Jitsi automatically - wait for button click
+                // Just check if room name exists to enable/disable the button
+                if (!state.roomName) {
+                    // console.log("No room name provided, hiding video button");
+                    document.getElementById('start-video-btn').style.display = 'none';
+                }
+                
+                // Hide main loading screen
+                document.getElementById('mainLoadingScreen').style.display = 'none';
+                
+                // Hide error screen if it was shown
+                document.getElementById('errorScreen').style.display = 'none';
+            } catch (error) {
+                console.error("Error processing case data:", error);
+                showError("Error processing case data: " + error.message, true);
+            }
+        }
+        
+        // Function to handle form submission
+        function handleSubmit() {
+            // Prevent multiple submissions
+            if (state.submitting) {
+                // console.log("Submit already in progress, ignoring click");
+                return;
+            }
+            
+            state.submitting = true;
+            // console.log("Submission started");
+            
+            // Update UI to show submission in progress
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Submitting...";
+            submitBtn.style.backgroundColor = "#cccccc";
+            submitBtn.style.cursor = "not-allowed";
+            
+            // Validate that something is checked
+            const totalChecked = state.checklist.dataGathering.booleanArray.filter(Boolean).length +
+                               state.checklist.management.booleanArray.filter(Boolean).length +
+                               state.checklist.interpersonalSkills.booleanArray.filter(Boolean).length;
+            
+            // console.log("Total items checked:", totalChecked);
+            
+            if (totalChecked === 0) {
+                showError("Please check at least one item before submitting.");
+                // Reset submission state
+                state.submitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Submit";
+                submitBtn.style.backgroundColor = "#FFDE59";
+                submitBtn.style.cursor = "pointer";
+                return;
+            }
+            
+            // Show loading screen
+            loadingScreen.style.display = 'flex';
+            
+            // Calculate scores for each domain
+            const dataGatheringScore = calculateScore(state.checklist.dataGathering.booleanArray);
+            const managementScore = calculateScore(state.checklist.management.booleanArray);
+            const interpersonalSkillsScore = calculateScore(state.checklist.interpersonalSkills.booleanArray);
+            
+            // Update score display
+            document.getElementById('dataGatheringScore').textContent = dataGatheringScore;
+            document.getElementById('managementScore').textContent = managementScore;
+            document.getElementById('interpersonalSkillsScore').textContent = interpersonalSkillsScore;
+
+            // Prepare the data to be submitted
+            const submissionData = {
+                userID: state.userEmail,
+                caseIndex: state.caseIndex,
+                timestamp: new Date().toISOString(),
+                responses: {
+                    dataGathering: {
+                        booleanArray: state.checklist.dataGathering.booleanArray,
+                        score: dataGatheringScore
+                    },
+                    management: {
+                        booleanArray: state.checklist.management.booleanArray,
+                        score: managementScore
+                    },
+                    interpersonalSkills: {
+                        booleanArray: state.checklist.interpersonalSkills.booleanArray,
+                        score: interpersonalSkillsScore
+                    }
+                }
+            };
+            
+            // console.log("Sending submission to parent:", submissionData);
+            
+            try {
+                // Send the data to the parent page for submission
+                window.parent.postMessage({
+                    type: 'submitChecklist',
+                    data: submissionData
+                }, '*');
+                
+                // Set a timeout in case we don't get a response from the parent
+                setTimeout(function() {
+                    if (state.submitting) {
+                        // console.log("Submission response timeout");
+                        loadingScreen.style.display = 'none';
+                        showError("Submission timed out. Please try again.");
+                        resetSubmitButton();
+                    }
+                }, 10000); // 10 seconds timeout
+            } catch (error) {
+                console.error("Error sending submission:", error);
+                loadingScreen.style.display = 'none';
+                showError("Error submitting checklist: " + error.message);
+                resetSubmitButton();
+            }
+        }
+        
+        // Helper function to reset the submit button
+        function resetSubmitButton() {
+            state.submitting = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Submit";
+            submitBtn.style.backgroundColor = "#FFDE59";
+            submitBtn.style.cursor = "pointer";
+        }
+        
+        // Handle successful submission
+        function handleSubmissionSuccess() {
+            // console.log("Submission successful");
+            loadingScreen.style.display = 'none';
+            showMessage("Your checklist has been successfully submitted!", "success");
+            
+            // Update UI to show submission is complete
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Submitted ✓";
+            submitBtn.style.backgroundColor = "#66cc66";
+            submitBtn.style.cursor = "not-allowed";
+            
+            state.submitting = false;
+        }
+        
+        // Helper function to show error messages
+        function showError(message, isCritical = false) {
+            // console.log(`Error: ${message} (Critical: ${isCritical})`);
+            if (isCritical) {
+                showErrorScreen(message);
+            } else {
+                showMessage(message, "error");
+            }
+        }
+        
+        // Helper function to show messages
+        function showMessage(message, type) {
+            const container = type === "error" ? 
+                document.getElementById('errorContainer') : 
+                document.getElementById('successContainer');
+            
+            container.textContent = message;
+            container.style.display = 'block';
+            
+            setTimeout(() => {
+                container.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Helper function to capitalize first letter of a string
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+        
+        // Show error screen with custom message
+        function showErrorScreen(message) {
+            // console.log(`Showing error screen with message: ${message}`);
+            document.getElementById('errorScreenMessage').textContent = message || "We couldn't find the requested case. Please check the URL and try again.";
+            document.getElementById('errorScreen').style.display = 'flex';
+            document.getElementById('mainLoadingScreen').style.display = 'none';
+        }
+        
+        // Add timeout to show error screen if data doesn't load
+        let loadTimeoutId = setTimeout(() => {
+            // console.log("Load timeout fired. Current loading state:", state.loading);
+            if (state.loading) {
+                showErrorScreen("It's taking longer than expected to load the case data. Please check your internet connection or try again later.");
+            }
+        }, 15000); // 15 seconds timeout
+
+        // Clean up timeout if page unloads
+        window.addEventListener('beforeunload', () => {
+            clearTimeout(loadTimeoutId);
+        });
+        
+        // Function to handle Start Video button click
+        function handleStartVideo() {
+            if (state.videoContainerShown) return;
+            
+            // Hide the button
+            document.getElementById('start-video-btn').style.display = 'none';
+            
+            // Show video container
+            document.querySelector('.video-container').style.display = 'block';
+            state.videoContainerShown = true;
+            
+            // Show loading screen inside video container
+            loadingScreen.style.display = 'flex';
+            
+            // Initialize Jitsi
+            if (state.roomName) {
+                initializeJitsiMeet();
+            } else {
+                loadingScreen.style.display = 'none';
+                showError("No video room is available for this session.", true);
+            }
+        }
+
+        // Handle video conference left
+        function handleVideoConferenceLeft() {
+            // Clear the Jitsi instance
+            if (state.jitsiApi) {
+                // Properly dispose of the Jitsi API instance
+                state.jitsiApi.dispose();
+                state.jitsiApi = null;
+                state.hasInitializedJitsi = false;
+            }
+            
+            // Make sure loading screen is hidden
+            loadingScreen.style.display = 'none';
+            
+            // Hide the video container and show the button again
+            document.querySelector('.video-container').style.display = 'none';
+            document.getElementById('start-video-btn').style.display = 'block';
+            state.videoContainerShown = false;
+        }
+    </script>
+</body>
+</html> 
