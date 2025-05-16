@@ -2125,8 +2125,51 @@
                 display: none; /* Hide in mobile view, only show in sidebar */
             }
         }
-        
-        /* Rest of the existing styles */
+
+        /* Add styles for report issue button */
+        .floating-report-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background-color: #FFDE59;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 0px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+
+        .floating-report-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 0px #000;
+        }
+
+        .floating-report-button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        @media (max-width: 768px) {
+            .floating-report-button {
+                bottom: 15px;
+                left: 15px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            /* Ensure it doesn't collide with other floating elements */
+            .floating-clipboard-buttons {
+                bottom: 80px; /* Move clipboard buttons up when on mobile */
+            }
+        }
     </style>
 </head>
 <body>
@@ -2171,6 +2214,14 @@
             <div id="findingsLightboxContent"></div>
         </div>
     </div>
+
+    <!-- Floating Report Issue Button -->
+    <button class="floating-report-button" id="reportIssueBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M14.778.085A.5.5 0 0 1 15 .5V8a.5.5 0 0 1-.314.464L14.5 8l.186.464-.003.001-.006.003-.023.009a12.435 12.435 0 0 1-.397.15c-.264.095-.631.223-1.047.35-.816.252-1.879.523-2.71.523-.847 0-1.548-.28-2.158-.525l-.028-.01C7.68 8.71 7.14 8.5 6.5 8.5c-.7 0-1.638.23-2.437.477A19.626 19.626 0 0 0 3 9.342V15.5a.5.5 0 0 1-1 0V.5a.5.5 0 0 1 1 0v.282c.226-.079.496-.17.79-.26C4.606.272 5.67 0 6.5 0c.84 0 1.524.277 2.121.519l.043.018C9.286.788 9.828 1 10.5 1c.7 0 1.638-.23 2.437-.477a19.587 19.587 0 0 0 1.349-.476l.019-.007.004-.002h.001"/>
+        </svg>
+        Report Issue
+    </button>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay">
@@ -3574,6 +3625,21 @@
                 if (e.target === this) {
                     this.style.display = 'none';
                 }
+            });
+        }
+        
+        // Initialize feedback button
+        const reportIssueBtn = document.getElementById('reportIssueBtn');
+        if (reportIssueBtn) {
+            reportIssueBtn.addEventListener('click', function() {
+                // Show loading overlay before navigation
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                
+                // Navigate to the feedback page within the application
+                window.parent.postMessage({ 
+                    type: 'navigate', 
+                    data: { url: '/user-feedback' } 
+                }, '*');
             });
         }
     });
