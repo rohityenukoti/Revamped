@@ -769,5 +769,24 @@ function updateStreak(userResponses) {
     userResponses.currentStreak = currentActiveStreak;
     userResponses.bestStreak = bestStreak;
     userResponses.lastPracticeDate = lastPracticeDate ? lastPracticeDate.toISOString() : null;
-    wixData.update("userResponses", userResponses);
+    
+    // Check if this is a new user record that needs to be created
+    if (userResponses._id) {
+        // Existing record - update it
+        wixData.update("userResponses", userResponses);
+    } else {
+        // New record - insert it
+        // Make sure the userID field is set correctly for new records
+        if (!userResponses.userID) {
+            // This shouldn't happen if getUserResponses is working correctly, but as a safeguard
+            currentMember.getMember().then(member => {
+                if (member) {
+                    userResponses.userID = member.loginEmail;
+                    wixData.insert("userResponses", userResponses);
+                }
+            });
+        } else {
+            wixData.insert("userResponses", userResponses);
+        }
+    }
 }
