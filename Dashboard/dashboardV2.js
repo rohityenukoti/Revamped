@@ -101,7 +101,17 @@ $w.onReady(async function () {
                         if (member) {
                             const userResponse = await getUserResponses(member.loginEmail);
                             userResponse.examDate = data;
-                            await wixData.update("userResponses", userResponse);
+                            
+                            // Check if this is a new user record that needs to be created
+                            if (userResponse._id) {
+                                // Existing record - update it
+                                await wixData.update("userResponses", userResponse);
+                            } else {
+                                // New record - insert it
+                                // Make sure the userID field is set correctly for new records
+                                userResponse.userID = member.loginEmail;
+                                await wixData.insert("userResponses", userResponse);
+                            }
                         }
                     } catch (error) {
                         console.error('Error saving exam date:', error);
