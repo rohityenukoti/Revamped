@@ -2697,6 +2697,11 @@
     document.addEventListener('DOMContentLoaded', () => {
         state.treeView = new TreeView(document.getElementById('lightbox-treeView'));
         
+        // Initialize the TreeView mode to match the global state
+        if (state.treeView && state.mode) {
+            state.treeView.setMode(state.mode);
+        }
+        
         // BrainBank button functionality
         document.getElementById('brainbank-button').addEventListener('click', () => {
             document.getElementById('lightbox').style.display = 'flex';
@@ -2924,6 +2929,11 @@
     function handleModeChange(mode) {
         state.mode = mode;
         document.body.className = `mode-${mode}`;
+        
+        // Update TreeView mode to match global state
+        if (state.treeView) {
+            state.treeView.setMode(mode);
+        }
         
         // Update button state and text
         const modeToggleBtn = document.getElementById('modeToggleBtn');
@@ -3289,6 +3299,13 @@
             
             // Show back button when moving away from welcome screen
             document.getElementById('floatingBackBtn').style.display = 'block';
+            
+            // Ensure we're in practice mode and TreeView knows it
+            if (state.mode !== 'practice') {
+                handleModeChange('practice');
+            } else if (state.treeView) {
+                state.treeView.setMode('practice');
+            }
             
             // Automatically request link generation
             window.parent.postMessage({ type: 'generateLink' }, '*');
