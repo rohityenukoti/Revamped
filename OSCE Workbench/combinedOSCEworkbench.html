@@ -4635,6 +4635,16 @@
 
     // Prevent text copying and replace with copyright message
     document.addEventListener('copy', function(e) {
+        // Check if selection is within the simulator link box that needs to be copied
+        const selection = window.getSelection();
+        const simulatorLinkBox = document.getElementById('simulatorLinkBox');
+        
+        if (simulatorLinkBox && simulatorLinkBox.contains(selection.anchorNode)) {
+            // Allow normal copy for the simulator link
+            return;
+        }
+        
+        // Otherwise prevent copying and show copyright message
         e.preventDefault();
         e.clipboardData.setData('text/plain', 'Made by TuringMedSchool - turingmedschool.com');
     });
