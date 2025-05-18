@@ -138,11 +138,7 @@
             font-style: italic;
             margin-left: 25px;
         }
-        .tree-item-header.highlighted,
-        .case-item.highlighted {
-            border: 3px solid #000;
-            background-color: #FFDE59;
-        }
+
         .lock-icon {
             width: 16px;
             height: 16px;
@@ -153,6 +149,20 @@
             opacity: 0.6;
             cursor: not-allowed;
         }
+        
+        /* Add styles for selected tree items */
+        .tree-item-header.selected {
+            background-color: #FFDE59;
+            border-left: 4px solid #000;
+            font-weight: bold;
+        }
+        
+        .case-item.selected {
+            background-color: #FFDE59;
+            border-left: 4px solid #000;
+            font-weight: bold;
+        }
+        
         .loading-icon {
             display: inline-block;
             width: 20px;
@@ -2728,23 +2738,7 @@
         }
     }
 
-    function highlightCaseInTree(path) {
-        if (state.treeView) {
-            if (Array.isArray(path)) {
-                state.treeView.highlightCase(...path);
-            } else if (path && typeof path === 'object') {
-                // Handle case where path is an object with topic, category, etc.
-                state.treeView.highlightCase(
-                    path.topic, 
-                    path.category, 
-                    path.subCategory, 
-                    path.caseName
-                );
-            } else {
-                console.warn("Invalid path format for highlighting case:", path);
-            }
-        }
-    }
+
 
     function updateTopicInTree(topic, data) {
         if (state.treeView && topic && data) {
@@ -2804,20 +2798,7 @@
                 }
                 break;
             
-            case 'highlightCase':
-                if (data) {
-                    if (data.path) {
-                        highlightCaseInTree(data.path);
-                    } else if (data.topic !== undefined || data.caseName !== undefined) {
-                        highlightCaseInTree({
-                            topic: data.topic,
-                            category: data.category,
-                            subCategory: data.subCategory,
-                            caseName: data.caseName
-                        });
-                    }
-                }
-                break;
+
             
             case 'hideTimestampSelector':
                 document.getElementById('timestampSelector').style.display = 'none';
@@ -3758,8 +3739,8 @@
         constructor(element) {
             this.element = element;
             this.data = null;
-            this.highlightedPath = null;
             this.mode = 'review'; // Default mode
+            this.selectedIds = []; // Track selected items by their ids
             
             // Show loading state initially
             document.getElementById('lightbox-loading').style.display = 'flex';
@@ -3819,6 +3800,36 @@
             this.render();
         }
 
+        // Add function to set selected item and its parents
+        setSelected(id) {
+            // Reset selected items array
+            this.selectedIds = [];
+            
+            // Find the item and its ancestors
+            const findAndMarkSelected = (items, targetId, parentPath = []) => {
+                if (!Array.isArray(items)) return false;
+                
+                for (let item of items) {
+                    const currentPath = [...parentPath, item.id];
+                    
+                    if (item.id === targetId) {
+                        // We found the target, mark its path as selected
+                        this.selectedIds = currentPath;
+                        return true;
+                    }
+                    
+                    // Check children
+                    if (item.children && findAndMarkSelected(item.children, targetId, currentPath)) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+            
+            findAndMarkSelected(this.data, id);
+            this.render();
+        }
+
         render() {
             this.element.innerHTML = this.renderTree(this.data);
             this.addEventListeners();
@@ -3830,14 +3841,13 @@
         }
 
         renderItem(item) {
-            const isHighlighted = this.isItemHighlighted(item);
-            const highlightClass = isHighlighted ? 'highlighted' : '';
             const lockedClass = item.locked ? 'locked' : '';
+            const selectedClass = this.selectedIds.includes(item.id) ? 'selected' : '';
 
             if (item.type === 'caseName') {
                 const displayName = this.mode === 'practice' ? this.maskCaseName(item) : item.name;
                 return `
-                    <div class="case-item ${highlightClass}" data-id="${item.id}">
+                    <div class="case-item ${selectedClass}" data-id="${item.id}">
                         <span>${displayName}</span>
                         ${item.hasResponse ? '<span class="tick-mark">✓</span>' : ''}
                     </div>
@@ -3850,7 +3860,7 @@
 
             return `
                 <div class="tree-item ${isOpen ? 'open' : ''}" data-id="${item.id}">
-                    <div class="tree-item-header ${highlightClass} ${lockedClass}">
+                    <div class="tree-item-header ${lockedClass} ${selectedClass}">
                         ${hasChildren ? `
                             <svg class="tree-item-icon" viewBox="0 0 24 24">
                                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
@@ -3876,33 +3886,7 @@
             return `Case ${item.caseUID}`;
         }
 
-        isItemHighlighted(item) {
-            if (!this.highlightedPath || !item) return false;
-            
-            // Make sure item is defined and has a valid id property
-            if (!item || !item.id) return false;
-            
-            const [highlightedTopic, highlightedCategory, highlightedSubCategory, highlightedCase] = this.highlightedPath;
 
-            // Make sure all parts are defined before using them
-            if (!highlightedTopic) return false;
-
-            switch (item.type) {
-                case 'topic':
-                    return item.id === highlightedTopic;
-                case 'category':
-                    return highlightedCategory && item.id === `${highlightedTopic}:${highlightedCategory}`;
-                case 'subCategory':
-                    return highlightedCategory && highlightedSubCategory && 
-                        item.id === `${highlightedTopic}:${highlightedCategory}:${highlightedSubCategory}`;
-                case 'caseName':
-                    if (!highlightedCase) return false;
-                    const caseName = item.id.split(':')[1];
-                    return caseName === highlightedCase;
-                default:
-                    return false;
-            }
-        }
 
         addEventListeners() {
             this.element.querySelectorAll('.tree-item-header').forEach(header => {
@@ -3933,6 +3917,7 @@
                     const caseName = caseItem.dataset.id;
                     if (caseName) {
                         document.getElementById('lightbox-loading').style.display = 'flex';
+                        this.setSelected(caseName); // Mark this case as selected
                         this.onCaseSelected(caseName);
                     }
                     e.stopPropagation();
@@ -3957,18 +3942,6 @@
             window.parent.postMessage({ type: 'caseSelected', caseName: caseName }, '*');
         }
 
-        highlightCase(topic, category, subCategory, caseName) {
-            if(!topic && !category && !subCategory && !caseName) {
-                this.highlightedPath = null;
-            } else if(Array.isArray(topic)) {
-                // Handle case where path is passed as an array
-                this.highlightedPath = topic;
-            } else {
-                this.highlightedPath = [topic, category, subCategory, caseName];
-            }
-            this.render();
-        }
-
         setMode(mode) {
             this.mode = mode;
             this.render();
@@ -3979,25 +3952,27 @@
     window.addEventListener('message', (event) => {
         if (!event.data || !event.data.type) return;
         
-        const { type, data, path, mode, caseName, category, subCategory, topicId } = event.data;
+        const { type, data, mode, topicId } = event.data;
         
         if (type === 'setData') {
             treeView.setData(data);
         } else if (type === 'toggleTopic') {
             treeView.toggleTopic(topicId);
-        } else if (type === 'highlightCase') {
-            if (path) {
-                treeView.highlightCase(path);
-            } else if (caseName) {
-                treeView.highlightCase(topic, category, subCategory, caseName);
-            }
-            treeView.render();
         } else if (type === 'setMode' && mode) {
             treeView.setMode(mode);
         } else if (type === 'updateCaseData') {
+            // Set selected case in the tree
+            if (data && data.caseId) {
+                treeView.setSelected(data.caseId);
+            }
             // Hide loading state and close lightbox after case data is loaded
             document.getElementById('lightbox-loading').style.display = 'none';
             document.getElementById('lightbox').style.display = 'none';
+        } else if (type === 'setSelectedItem') {
+            // New event to directly set a selected item
+            if (data && data.id) {
+                treeView.setSelected(data.id);
+            }
         }
     }, false);
     (function() {

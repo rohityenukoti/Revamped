@@ -530,10 +530,6 @@ function handleUrlParameters() {
         loadCaseData(caseName);
     } else {
         // If no case is specified in the URL, show the case selection lightbox
-        $workbenchComponent.postMessage({ 
-            type: 'highlightCase', 
-            path: null
-        });
         state.currentCase = null;
         showCaseSelectionLightbox();
     }
@@ -843,14 +839,6 @@ async function loadCaseData(caseName) {
 
                 updateUrl(caseName);
 
-                const casePath = await findCasePath(caseName);
-                if (casePath) {
-                    $workbenchComponent.postMessage({ 
-                        type: 'highlightCase', 
-                        path: casePath
-                    });
-                }
-
                 // Store checklist in local storage
                 if (caseData.checklist?.Checklist) {
                     wixStorage.local.setItem('currentCaseChecklist', JSON.stringify(caseData.checklist.Checklist));
@@ -878,38 +866,6 @@ function showError(message) {
         type: 'showError',
         message: message
     });
-}
-
-async function findCasePath(caseName) {
-    const treeStructure = await fetchTreeStructure();
-    for (const [topic, topicData] of Object.entries(treeStructure)) {
-        if (Array.isArray(topicData)) {
-            // Check if any case in the array matches
-            const caseItem = topicData.find(item => item.caseName === caseName);
-            if (caseItem) {
-                return [topic, topic, topic, caseName];
-            }
-        } else {
-            for (const [category, categoryData] of Object.entries(topicData)) {
-                if (Array.isArray(categoryData)) {
-                    // Check if any case in the array matches
-                    const caseItem = categoryData.find(item => item.caseName === caseName);
-                    if (caseItem) {
-                        return [topic, category, category, caseName];
-                    }
-                } else {
-                    for (const [subCategory, cases] of Object.entries(categoryData)) {
-                        // Check if any case in the array matches
-                        const caseItem = cases.find(item => item.caseName === caseName);
-                        if (caseItem) {
-                            return [topic, category, subCategory, caseName];
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return null;
 }
 
 function updateUrl(caseName) {
