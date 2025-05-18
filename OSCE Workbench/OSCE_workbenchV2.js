@@ -833,7 +833,8 @@ async function loadCaseData(caseName) {
                         patientInfo: caseData.patientInfo,
                         keyPoints: caseData.keyPoints,
                         inTimeSections: caseData.inTimeSections?.Consultation || [],
-                        checklist: caseData.checklist?.Checklist || []
+                        checklist: caseData.checklist?.Checklist || [],
+                        caseId: `caseName:${caseName}` // Add case ID in the correct format for tree view highlighting
                     }
                 });
 
