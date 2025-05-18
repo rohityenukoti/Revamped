@@ -2007,6 +2007,24 @@
             font-weight: 800;
         }
 
+        /* Domain remarks style */
+        .domain-remarks {
+            margin-top: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #fffef0;
+            border: 2px dashed #000;
+            border-radius: 0px;
+            box-shadow: 3px 3px 0px #000;
+            display: none; /* Hidden by default, shown when remarks exist */
+        }
+
+        .domain-remarks-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #000;
+        }
+
         /* Media query for mobile responsiveness */
         @media (max-width: 768px) {
             .domain-score {
@@ -2423,6 +2441,10 @@
                     <div class="info-box-title">Data Gathering</div>
                     <div style="padding: 10px;">
                         <div class="domain-score" id="dataGatheringScore">Score: N/A</div>
+                        <div class="domain-remarks">
+                            <div class="domain-remarks-title">Examiner's Remarks:</div>
+                            <div id="dataGatheringRemarks"></div>
+                        </div>
                         <div class="performance-flex-container">
                             <div class="performance-column">
                                 <h4>✅ Covered Points</h4>
@@ -2440,6 +2462,10 @@
                     <div class="info-box-title">Management</div>
                     <div style="padding: 10px;">
                         <div class="domain-score" id="managementScore">Score: N/A</div>
+                        <div class="domain-remarks">
+                            <div class="domain-remarks-title">Examiner's Remarks:</div>
+                            <div id="managementRemarks"></div>
+                        </div>
                         <div class="performance-flex-container">
                             <div class="performance-column">
                                 <h4>✅ Covered Points</h4>
@@ -2457,6 +2483,10 @@
                     <div class="info-box-title">Interpersonal Skills</div>
                     <div style="padding: 10px;">
                         <div class="domain-score" id="interpersonalSkillsScore">Score: N/A</div>
+                        <div class="domain-remarks">
+                            <div class="domain-remarks-title">Examiner's Remarks:</div>
+                            <div id="interpersonalSkillsRemarks"></div>
+                        </div>
                         <div class="performance-flex-container">
                             <div class="performance-column">
                                 <h4>✅ Covered Points</h4>
@@ -3034,6 +3064,7 @@
             const coveredList = document.getElementById(`${domain}Covered`);
             const missedList = document.getElementById(`${domain}Missed`);
             const scoreElement = document.getElementById(`${domain}Score`);
+            const remarksElement = document.getElementById(`${domain}Remarks`);
             
             if (results[domain]) {
                 if (coveredList) coveredList.innerHTML = createHTMLList(results[domain].covered || []);
@@ -3045,11 +3076,26 @@
                 } else if (scoreElement) {
                     scoreElement.innerHTML = 'Score: N/A';
                 }
+                
+                // Update remarks if they exist
+                if (remarksElement) {
+                    if (results[domain].remarks) {
+                        remarksElement.innerHTML = results[domain].remarks;
+                        remarksElement.parentElement.style.display = 'block';
+                    } else {
+                        remarksElement.innerHTML = '';
+                        remarksElement.parentElement.style.display = 'none';
+                    }
+                }
             } else {
                 if (coveredList) coveredList.innerHTML = "<p>None</p>";
                 if (missedList) missedList.innerHTML = "<p>None</p>";
                 if (scoreElement) {
                     scoreElement.innerHTML = 'Score: N/A';
+                }
+                if (remarksElement) {
+                    remarksElement.innerHTML = '';
+                    remarksElement.parentElement.style.display = 'none';
                 }
             }
         });
@@ -3078,6 +3124,13 @@
             const scoreElement = document.getElementById(`${domain}Score`);
             if (scoreElement) {
                 scoreElement.innerHTML = 'Score: N/A';
+            }
+            
+            // Clear remarks and hide remarks container
+            const remarksElement = document.getElementById(`${domain}Remarks`);
+            if (remarksElement) {
+                remarksElement.innerHTML = '';
+                remarksElement.parentElement.style.display = 'none';
             }
         });
     }

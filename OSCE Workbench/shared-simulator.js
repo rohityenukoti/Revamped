@@ -223,7 +223,10 @@ function formatChecklist(caseData) {
     const defaultChecklist = {
         dataGathering: [],
         management: [],
-        interpersonalSkills: []
+        interpersonalSkills: [],
+        dataGatheringRemarks: "",
+        managementRemarks: "",
+        interpersonalSkillsRemarks: ""
     };
     
     // If no checklist data, return default structure
@@ -235,7 +238,10 @@ function formatChecklist(caseData) {
     const formattedChecklist = {
         dataGathering: [],
         management: [],
-        interpersonalSkills: []
+        interpersonalSkills: [],
+        dataGatheringRemarks: "",
+        managementRemarks: "",
+        interpersonalSkillsRemarks: ""
     };
     
     // Process checklist items and organize by domain
@@ -332,12 +338,24 @@ async function handleSubmission(submissionData) {
                 userResponses.responses[caseName] = [];
             }
             
-            // Add new response
+            // Add new response with remarks included
             userResponses.responses[caseName].push({
                 timestamp: new Date().toISOString(),
-                dataGathering: submissionData.responses.dataGathering,
-                management: submissionData.responses.management,
-                interpersonalSkills: submissionData.responses.interpersonalSkills
+                dataGathering: {
+                    booleanArray: submissionData.responses.dataGathering.booleanArray,
+                    score: submissionData.responses.dataGathering.score,
+                    remarks: submissionData.responses.dataGathering.remarks || ""
+                },
+                management: {
+                    booleanArray: submissionData.responses.management.booleanArray,
+                    score: submissionData.responses.management.score,
+                    remarks: submissionData.responses.management.remarks || ""
+                },
+                interpersonalSkills: {
+                    booleanArray: submissionData.responses.interpersonalSkills.booleanArray,
+                    score: submissionData.responses.interpersonalSkills.score,
+                    remarks: submissionData.responses.interpersonalSkills.remarks || ""
+                }
             });
             
             // Update last updated timestamp
@@ -353,9 +371,21 @@ async function handleSubmission(submissionData) {
                 responses: {
                     [caseName]: [{
                         timestamp: new Date().toISOString(),
-                        dataGathering: submissionData.responses.dataGathering,
-                        management: submissionData.responses.management,
-                        interpersonalSkills: submissionData.responses.interpersonalSkills
+                        dataGathering: {
+                            booleanArray: submissionData.responses.dataGathering.booleanArray,
+                            score: submissionData.responses.dataGathering.score,
+                            remarks: submissionData.responses.dataGathering.remarks || ""
+                        },
+                        management: {
+                            booleanArray: submissionData.responses.management.booleanArray,
+                            score: submissionData.responses.management.score,
+                            remarks: submissionData.responses.management.remarks || ""
+                        },
+                        interpersonalSkills: {
+                            booleanArray: submissionData.responses.interpersonalSkills.booleanArray,
+                            score: submissionData.responses.interpersonalSkills.score,
+                            remarks: submissionData.responses.interpersonalSkills.remarks || ""
+                        }
                     }]
                 },
                 lastUpdated: new Date()

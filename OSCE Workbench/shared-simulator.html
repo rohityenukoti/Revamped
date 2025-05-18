@@ -159,6 +159,35 @@
             cursor: pointer;
         }
         
+        .remarks-container {
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .remarks-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .remarks-textarea {
+            width: 100%;
+            min-height: 60px;
+            padding: 8px;
+            border: 2px solid #000;
+            border-radius: 0px;
+            resize: vertical;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        .remarks-textarea:focus {
+            outline: none;
+            border-color: #FFDE59;
+            box-shadow: 0 0 0 2px rgba(255, 222, 89, 0.3);
+        }
+        
         .submit-button {
             background-color: #FFDE59;
             color: #000;
@@ -435,6 +464,8 @@
             width: 90%;
             transform: translateY(-20px);
             transition: all 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         
         .modal-overlay.active .modal-container {
@@ -504,6 +535,42 @@
             text-align: center;
             font-weight: bold;
             font-size: 1.2em;
+        }
+        
+        /* Remarks summary styles */
+        .remarks-summary {
+            margin-top: 20px;
+            border-top: 2px solid #ddd;
+            padding-top: 15px;
+        }
+        
+        .remarks-summary-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #000;
+        }
+        
+        .remarks-summary-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 0px;
+        }
+        
+        .remarks-summary-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #000;
+        }
+        
+        .remarks-summary-text {
+            font-size: 0.9em;
+            color: #333;
+            white-space: pre-wrap;
+            font-style: italic;
         }
         
         .modal-footer {
@@ -611,6 +678,10 @@
                             <div id="dataGatheringChecklist">
                                 <!-- Checklist items will be loaded dynamically -->
                             </div>
+                            <div class="remarks-container">
+                                <label class="remarks-label" for="dataGatheringRemarks">Additional Remarks:</label>
+                                <textarea id="dataGatheringRemarks" class="remarks-textarea" placeholder="Enter any additional remarks for data gathering..."></textarea>
+                            </div>
                         </div>
                         
                         <!-- Management Section -->
@@ -619,6 +690,10 @@
                             <div id="managementChecklist">
                                 <!-- Checklist items will be loaded dynamically -->
                             </div>
+                            <div class="remarks-container">
+                                <label class="remarks-label" for="managementRemarks">Additional Remarks:</label>
+                                <textarea id="managementRemarks" class="remarks-textarea" placeholder="Enter any additional remarks for management..."></textarea>
+                            </div>
                         </div>
                         
                         <!-- Interpersonal Skills Section -->
@@ -626,6 +701,10 @@
                             <h3>Interpersonal Skills</h3>
                             <div id="interpersonalSkillsChecklist">
                                 <!-- Checklist items will be loaded dynamically -->
+                            </div>
+                            <div class="remarks-container">
+                                <label class="remarks-label" for="interpersonalSkillsRemarks">Additional Remarks:</label>
+                                <textarea id="interpersonalSkillsRemarks" class="remarks-textarea" placeholder="Enter any additional remarks for interpersonal skills..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -677,7 +756,7 @@
         <div class="modal-container">
             <div class="modal-title">Adjust Scores</div>
             <div class="modal-body">
-                <p>The automated scoring is based on the number of checklist items selected. You can manually adjust the scores before final submission if needed.</p>
+                <p>You can manually adjust the scores before final submission if needed.</p>
                 
                 <div class="score-adjustment-row">
                     <div class="score-adjustment-label">Data Gathering</div>
@@ -705,6 +784,25 @@
                         <button class="score-adjustment-btn plus" data-domain="interpersonalSkills">+</button>
                     </div>
                 </div>
+                
+                <div class="remarks-summary">
+                    <div class="remarks-summary-title">Remarks Summary</div>
+                    
+                    <div class="remarks-summary-item">
+                        <div class="remarks-summary-label">Data Gathering Remarks</div>
+                        <div class="remarks-summary-text" id="adjustDataGatheringRemarks">No remarks</div>
+                    </div>
+                    
+                    <div class="remarks-summary-item">
+                        <div class="remarks-summary-label">Management Remarks</div>
+                        <div class="remarks-summary-text" id="adjustManagementRemarks">No remarks</div>
+                    </div>
+                    
+                    <div class="remarks-summary-item">
+                        <div class="remarks-summary-label">Interpersonal Skills Remarks</div>
+                        <div class="remarks-summary-text" id="adjustInterpersonalSkillsRemarks">No remarks</div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="modal-btn cancel" id="cancelAdjustment">Cancel</button>
@@ -722,15 +820,18 @@
             checklist: {
                 dataGathering: {
                     points: [],
-                    booleanArray: []
+                    booleanArray: [],
+                    remarks: ""
                 },
                 management: {
                     points: [],
-                    booleanArray: []
+                    booleanArray: [],
+                    remarks: ""
                 },
                 interpersonalSkills: {
                     points: [],
-                    booleanArray: []
+                    booleanArray: [],
+                    remarks: ""
                 }
             },
             scores: {
@@ -818,15 +919,18 @@
             state.checklist = {
                 dataGathering: {
                     points: data.dataGathering || [],
-                    booleanArray: new Array((data.dataGathering || []).length).fill(false)
+                    booleanArray: new Array((data.dataGathering || []).length).fill(false),
+                    remarks: data.dataGatheringRemarks || ""
                 },
                 management: {
                     points: data.management || [],
-                    booleanArray: new Array((data.management || []).length).fill(false)
+                    booleanArray: new Array((data.management || []).length).fill(false),
+                    remarks: data.managementRemarks || ""
                 },
                 interpersonalSkills: {
                     points: data.interpersonalSkills || [],
-                    booleanArray: new Array((data.interpersonalSkills || []).length).fill(false)
+                    booleanArray: new Array((data.interpersonalSkills || []).length).fill(false),
+                    remarks: data.interpersonalSkillsRemarks || ""
                 }
             };
             
@@ -834,6 +938,12 @@
             createChecklistItems(dataGatheringChecklist, state.checklist.dataGathering.points, 'dataGathering');
             createChecklistItems(managementChecklist, state.checklist.management.points, 'management');
             createChecklistItems(interpersonalSkillsChecklist, state.checklist.interpersonalSkills.points, 'interpersonalSkills');
+            
+            // Initialize remarks textareas with any existing values
+            document.getElementById('dataGatheringRemarks').value = state.checklist.dataGathering.remarks;
+            document.getElementById('managementRemarks').value = state.checklist.management.remarks;
+            document.getElementById('interpersonalSkillsRemarks').value = state.checklist.interpersonalSkills.remarks;
+            
             // console.log("Checklist UI updated with", 
             //            state.checklist.dataGathering.points.length, 
             //            state.checklist.management.points.length, 
@@ -1275,10 +1385,23 @@
 
         // Function to show the score adjustment modal
         function showScoreAdjustmentModal() {
+            // Get remarks from textareas
+            state.checklist.dataGathering.remarks = document.getElementById('dataGatheringRemarks').value.trim();
+            state.checklist.management.remarks = document.getElementById('managementRemarks').value.trim();
+            state.checklist.interpersonalSkills.remarks = document.getElementById('interpersonalSkillsRemarks').value.trim();
+            
             // Update the modal with current scores
             document.getElementById('adjustDataGatheringScore').textContent = state.scores.dataGathering;
             document.getElementById('adjustManagementScore').textContent = state.scores.management;
             document.getElementById('adjustInterpersonalSkillsScore').textContent = state.scores.interpersonalSkills;
+            
+            // Update remarks in the modal
+            document.getElementById('adjustDataGatheringRemarks').textContent = 
+                state.checklist.dataGathering.remarks || "No remarks";
+            document.getElementById('adjustManagementRemarks').textContent = 
+                state.checklist.management.remarks || "No remarks";
+            document.getElementById('adjustInterpersonalSkillsRemarks').textContent = 
+                state.checklist.interpersonalSkills.remarks || "No remarks";
             
             // Show the modal
             const modal = document.getElementById('scoreAdjustmentModal');
@@ -1330,6 +1453,11 @@
             document.getElementById('managementScore').textContent = state.scores.management;
             document.getElementById('interpersonalSkillsScore').textContent = state.scores.interpersonalSkills;
             
+            // Get remarks from textareas
+            state.checklist.dataGathering.remarks = document.getElementById('dataGatheringRemarks').value.trim();
+            state.checklist.management.remarks = document.getElementById('managementRemarks').value.trim();
+            state.checklist.interpersonalSkills.remarks = document.getElementById('interpersonalSkillsRemarks').value.trim();
+            
             // Show loading screen
             loadingScreen.style.display = 'flex';
             
@@ -1344,15 +1472,18 @@
                 responses: {
                     dataGathering: {
                         booleanArray: state.checklist.dataGathering.booleanArray,
-                        score: state.scores.dataGathering
+                        score: state.scores.dataGathering,
+                        remarks: state.checklist.dataGathering.remarks
                     },
                     management: {
                         booleanArray: state.checklist.management.booleanArray,
-                        score: state.scores.management
+                        score: state.scores.management,
+                        remarks: state.checklist.management.remarks
                     },
                     interpersonalSkills: {
                         booleanArray: state.checklist.interpersonalSkills.booleanArray,
-                        score: state.scores.interpersonalSkills
+                        score: state.scores.interpersonalSkills,
+                        remarks: state.checklist.interpersonalSkills.remarks
                     }
                 }
             };

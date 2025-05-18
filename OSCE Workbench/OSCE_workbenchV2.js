@@ -638,10 +638,15 @@ async function loadAnswers(caseName, timestampIndex, retryCount = 0) {
     const isScore = caseResponses.interpersonalSkills?.score ? 
         Math.round(parseFloat(caseResponses.interpersonalSkills.score)).toString() : 'N/A';
 
+    // Extract remarks if available
+    const dgRemarks = caseResponses.dataGathering?.remarks || null;
+    const mgRemarks = caseResponses.management?.remarks || null;
+    const isRemarks = caseResponses.interpersonalSkills?.remarks || null;
+
     const results = {
-        dataGathering: { covered: [], missed: [], score: dgScore },
-        management: { covered: [], missed: [], score: mgScore },
-        interpersonalSkills: { covered: [], missed: [], score: isScore }
+        dataGathering: { covered: [], missed: [], score: dgScore, remarks: dgRemarks },
+        management: { covered: [], missed: [], score: mgScore, remarks: mgRemarks },
+        interpersonalSkills: { covered: [], missed: [], score: isScore, remarks: isRemarks }
     };
 
     const domainMapping = {
