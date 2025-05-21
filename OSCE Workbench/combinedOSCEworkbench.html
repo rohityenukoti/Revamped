@@ -3533,6 +3533,37 @@
                     // Insert at the beginning of simulator-link-screen
                     simulatorLinkScreen.insertBefore(newCandidateInfoBox, simulatorLinkScreen.firstChild);
                     
+                    // Create a new findings info box (hidden)
+                    const newFindingsInfoBox = document.createElement('div');
+                    newFindingsInfoBox.className = 'info-box top-findings-info';
+                    newFindingsInfoBox.style.display = 'none'; // Keep it hidden
+                    
+                    // Create the title
+                    const findingsTitleDiv = document.createElement('div');
+                    findingsTitleDiv.className = 'info-box-title';
+                    findingsTitleDiv.textContent = 'Findings';
+                    newFindingsInfoBox.appendChild(findingsTitleDiv);
+                    
+                    // Get source elements
+                    const sourceImage = document.getElementById('findingsImage');
+                    const sourceText = document.getElementById('findingsText');
+                    
+                    // Add image if it exists and is visible
+                    if (sourceImage && sourceImage.style.display !== 'none') {
+                        const imageClone = sourceImage.cloneNode(true);
+                        newFindingsInfoBox.appendChild(imageClone);
+                    }
+                    
+                    // Add text content
+                    if (sourceText) {
+                        const textDiv = document.createElement('div');
+                        textDiv.innerHTML = sourceText.innerHTML;
+                        newFindingsInfoBox.appendChild(textDiv);
+                    }
+                    
+                    // Insert after candidate info box
+                    simulatorLinkScreen.insertBefore(newFindingsInfoBox, newCandidateInfoBox.nextSibling);
+                    
                     // Create and add the "Enter the Room" button under the candidate info
                     const enterRoomButton = document.createElement('button');
                     enterRoomButton.id = 'enterRoomBtn';
@@ -3583,35 +3614,16 @@
                     candidateInfoBox.style.display = 'none';
                 }
                 
-                // For findings
-                let findingsBox = null;
+                // For findings - use the created top-findings-info box
+                const topFindingsInfoBox = document.querySelector('.top-findings-info');
                 const findingsLightboxContent = document.getElementById('findingsLightboxContent');
-                const infoBoxTitles = document.querySelectorAll('.info-box-title');
                 
-                for (let i = 0; i < infoBoxTitles.length; i++) {
-                    if (infoBoxTitles[i].textContent.trim() === 'Findings') {
-                        findingsBox = infoBoxTitles[i].closest('.info-box');
-                        break;
-                    }
-                }
-                
-                if (findingsBox && findingsLightboxContent) {
+                if (topFindingsInfoBox && findingsLightboxContent) {
                     // Clone the findings content to the lightbox
-                    findingsLightboxContent.innerHTML = findingsBox.innerHTML;
+                    findingsLightboxContent.innerHTML = topFindingsInfoBox.innerHTML;
                     
-                    // If this was added to the DOM, hide it
-                    if (findingsBox.parentNode) {
-                        findingsBox.style.display = 'none';
-                    }
-                } else if (findingsLightboxContent) {
-                    // Create new content with findings image and text
-                    findingsLightboxContent.innerHTML = '';
-                    
-                    const findingsImage = document.getElementById('findingsImage')?.cloneNode(true);
-                    const findingsText = document.getElementById('findingsText')?.cloneNode(true);
-                    
-                    if (findingsImage) findingsLightboxContent.appendChild(findingsImage);
-                    if (findingsText) findingsLightboxContent.appendChild(findingsText);
+                    // Keep the original box hidden
+                    topFindingsInfoBox.style.display = 'none';
                 }
                 
                 // Show the floating clipboard buttons
