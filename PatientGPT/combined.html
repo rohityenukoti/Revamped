@@ -2027,7 +2027,7 @@
                 <h2>
                     <span>Evaluation Results</span>
                     <div class="score-display overall-score" title="Total Score">
-                        <span class="score-value" id="overallScore">0.00</span>
+                        <span class="score-value" id="overallScore">0</span>
                         <span class="score-max">/12</span>
                     </div>
                 </h2>
@@ -3326,7 +3326,7 @@ Please fill in the "Completed" field for each checklist item based on the chat h
     const dataGatheringScore = parseFloat(results.dataGathering.score || 0);
     const managementScore = parseFloat(results.management.score || 0);
     const interpersonalScore = parseFloat(results.interpersonalSkills.score || 0);
-    const overallScore = (dataGatheringScore + managementScore + interpersonalScore).toFixed(2);
+    const overallScore = (dataGatheringScore + managementScore + interpersonalScore).toFixed(0);
     
     // Update overall score display
     document.getElementById('overallScore').textContent = overallScore;
