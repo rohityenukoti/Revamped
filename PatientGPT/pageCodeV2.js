@@ -598,9 +598,21 @@ function displayResults(checklist, responses) {
         "Interpersonal Skills": "interpersonalSkills"
     };
     const results = {
-        dataGathering: { covered: [], missed: [] },
-        management: { covered: [], missed: [] },
-        interpersonalSkills: { covered: [], missed: [] }
+        dataGathering: { 
+            covered: [], 
+            missed: [], 
+            score: responses.dataGathering?.score || "0.00" 
+        },
+        management: { 
+            covered: [], 
+            missed: [], 
+            score: responses.management?.score || "0.00" 
+        },
+        interpersonalSkills: { 
+            covered: [], 
+            missed: [], 
+            score: responses.interpersonalSkills?.score || "0.00" 
+        }
     };
     const domainIndices = { dataGathering: 0, management: 0, interpersonalSkills: 0 };
     checklist.forEach((item) => {

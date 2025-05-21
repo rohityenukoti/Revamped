@@ -1730,6 +1730,54 @@
     .bar-2 { height: 50%; }
     .bar-3 { height: 75%; }
     .bar-4 { height: 100%; }
+
+    /* Add these styles for domain scores in the performance lightbox */
+    .score-display {
+        display: inline-block;
+        margin-left: 10px;
+        padding: 3px 8px;
+        background-color: #f8f9fa;
+        border: 2px solid #000;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 1em;
+    }
+
+    .score-value {
+        color: #333;
+    }
+
+    .score-max {
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    /* Only the h2 in evaluation results needs the flex layout for the overall score */
+#evaluationResults h2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left !important;
+    width: 100%;
+}
+
+/* Center the domain score below the heading */
+.evaluation-section > .score-display {
+    margin: 0 auto 15px;
+    display: block;
+    width: fit-content;
+}
+
+    .overall-score {
+        background-color: #f0f8ff; /* Light blue background */
+        border-color: #4070d0; /* Darker blue border */
+        padding: 4px 10px;
+    }
+
+    .overall-score .score-value {
+        color: #4070d0;
+        font-size: 1.1em;
+    }
   </style>
 
   <!-- External Scripts -->
@@ -1974,22 +2022,14 @@
                 <select id="timestampSelector"></select>
             </div>
             <div id="evaluationResults">
-                <h2>Evaluation Results</h2>
-                <div>
-                    <h3>Data Gathering</h3>
-                    <div><strong>Covered:</strong> <span id="dataGatheringCovered"></span></div>
-                    <div><strong>Missed:</strong> <span id="dataGatheringMissed"></span></div>
-                </div>
-                <div>
-                    <h3>Management</h3>
-                    <div><strong>Covered:</strong> <span id="managementCovered"></span></div>
-                    <div><strong>Missed:</strong> <span id="managementMissed"></span></div>
-                </div>
-                <div>
-                    <h3>Interpersonal Skills</h3>
-                    <div><strong>Covered:</strong> <span id="interpersonalSkillsCovered"></span></div>
-                    <div><strong>Missed:</strong> <span id="interpersonalSkillsMissed"></span></div>
-                </div>
+                <h2>
+                    <span>Evaluation Results</span>
+                    <div class="score-display overall-score" title="Average Score">
+                        <span class="score-value" id="overallScore">0.00</span>
+                        <span class="score-max">/4</span>
+                    </div>
+                </h2>
+                <!-- The rest of the content will be dynamically generated -->
             </div>
         </div>
     </div>
@@ -3257,6 +3297,10 @@ Please fill in the "Completed" field for each checklist item based on the chat h
             return `
                 <div class="evaluation-section">
                     <h3>${titleWithEmoji}</h3>
+                    <div class="score-display" title="Score out of 4" style="margin-bottom: 15px;">
+                        <span class="score-value">${data.score || "0.00"}</span>
+                        <span class="score-max">/4</span>
+                    </div>
                     <div class="evaluation-grid">
                         <div class="evaluation-column covered-column">
                             <div class="column-header">Covered</div>
@@ -3273,16 +3317,44 @@ Please fill in the "Completed" field for each checklist item based on the chat h
 
         function createHTMLList(items, emoji) {
             if (items.length === 0) return "<p>None</p>";
-            return items.map(item => `<div style="margin-bottom: 0.5em">${emoji} ${item}</div>`).join("");
+            return `<ul>${items.map(item => `<li>${emoji} ${item}</li>`).join("")}</ul>`;
         }
 
-        const evaluationResults = document.getElementById('evaluationResults');
-        evaluationResults.innerHTML = `
-            <h2>Evaluation Results</h2>
-            ${createResultSection('Data Gathering', results.dataGathering)}
-            ${createResultSection('Management', results.management)}
-            ${createResultSection('Interpersonal Skills', results.interpersonalSkills)}
-        `;
+            // Calculate the overall score (average of all domain scores)
+    const dataGatheringScore = parseFloat(results.dataGathering.score || 0);
+    const managementScore = parseFloat(results.management.score || 0);
+    const interpersonalScore = parseFloat(results.interpersonalSkills.score || 0);
+    const overallScore = ((dataGatheringScore + managementScore + interpersonalScore) / 3).toFixed(2);
+    
+    // Update overall score display
+    document.getElementById('overallScore').textContent = overallScore;
+    
+    const evaluationResults = document.getElementById('evaluationResults');
+    
+    // Keep the original h2 with overall score but update the content below
+    const currentH2 = evaluationResults.querySelector('h2');
+    const resultsContent = `
+        ${createResultSection('Data Gathering', results.dataGathering)}
+        ${createResultSection('Management', results.management)}
+        ${createResultSection('Interpersonal Skills', results.interpersonalSkills)}
+    `;
+    
+    // Insert the content after the h2
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = resultsContent;
+    
+    // Clear existing content except h2
+    const children = [...evaluationResults.children];
+    children.forEach(child => {
+        if (child !== currentH2) {
+            child.remove();
+        }
+    });
+    
+    // Append the new content
+    while (tempDiv.firstChild) {
+        evaluationResults.appendChild(tempDiv.firstChild);
+    }
     }
 
     function closeCaseSelectionModal() {
