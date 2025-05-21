@@ -2024,9 +2024,9 @@
             <div id="evaluationResults">
                 <h2>
                     <span>Evaluation Results</span>
-                    <div class="score-display overall-score" title="Average Score">
+                    <div class="score-display overall-score" title="Total Score">
                         <span class="score-value" id="overallScore">0.00</span>
-                        <span class="score-max">/4</span>
+                        <span class="score-max">/12</span>
                     </div>
                 </h2>
                 <!-- The rest of the content will be dynamically generated -->
@@ -3320,11 +3320,11 @@ Please fill in the "Completed" field for each checklist item based on the chat h
             return `<ul>${items.map(item => `<li>${emoji} ${item}</li>`).join("")}</ul>`;
         }
 
-            // Calculate the overall score (average of all domain scores)
+            // Calculate the overall score (sum of all domain scores)
     const dataGatheringScore = parseFloat(results.dataGathering.score || 0);
     const managementScore = parseFloat(results.management.score || 0);
     const interpersonalScore = parseFloat(results.interpersonalSkills.score || 0);
-    const overallScore = ((dataGatheringScore + managementScore + interpersonalScore) / 3).toFixed(2);
+    const overallScore = (dataGatheringScore + managementScore + interpersonalScore).toFixed(2);
     
     // Update overall score display
     document.getElementById('overallScore').textContent = overallScore;
