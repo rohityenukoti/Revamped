@@ -2627,6 +2627,22 @@
             );
         }
 
+        window.clearChatHistory = () => {
+            document.getElementById('chatHistory').innerHTML = '';
+            initMessages();
+        };
+
+        // Add this new function to handle sending messages
+        function sendUserMessage() {
+            const userMessageBox = document.getElementById('userMessageBox');
+            const userQuery = userMessageBox.textContent.trim();
+            if (userQuery !== '') {
+                handleUserQuery(userQuery, userQuery, '');
+                userMessageBox.innerHTML = '';
+                updateMicButton('mic'); // Reset to microphone icon after sending
+            }
+        }
+
         // Modify the microphone function
         window.microphone = async () => {
             const micButton = document.getElementById('microphone');
