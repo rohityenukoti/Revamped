@@ -1778,6 +1778,26 @@
         color: #4070d0;
         font-size: 1.1em;
     }
+
+    /* Add styles for the loading dots animation */
+    @keyframes loadingDots {
+        0%, 20% { content: "."; }
+        40% { content: ".."; }
+        60% { content: "..."; }
+        80%, 100% { content: ""; }
+    }
+
+    .simulator-message.loading:after {
+        content: "";
+        display: inline-block;
+        animation: loadingDots 1.5s infinite;
+        font-weight: bold;
+    }
+
+    .simulator-message.loading {
+        min-width: 60px;
+        min-height: 20px;
+    }
   </style>
 
   <!-- External Scripts -->
@@ -2382,7 +2402,7 @@
 
             // Create a new message element for the simulator
             const simulatorMessage = document.createElement('div');
-            simulatorMessage.className = 'chat-message simulator-message';
+            simulatorMessage.className = 'chat-message simulator-message loading';
             chatHistoryTextArea.appendChild(simulatorMessage);
             
             // Add a timeout to handle API request timeouts
@@ -2416,7 +2436,7 @@
                     return reader.read().then(({ value, done }) => {
                         if (done) {
                             // When the response is complete, speak the entire text
-                            speak(assistantReply.trim());
+                            speak(assistantReply.trim(), simulatorMessage);
                             
                             let assistantMessage = {
                                 role: 'assistant',
@@ -2443,8 +2463,10 @@
                                             }
                                             
                                             assistantReply += choice.delta.content;
-                                            simulatorMessage.textContent += choice.delta.content;
-                                            chatHistoryTextArea.scrollTop = chatHistoryTextArea.scrollHeight;
+                                            
+                                            // We'll store the text but not display it yet
+                                            // The text will be displayed when audio starts playing
+                                            simulatorMessage.dataset.pendingText = assistantReply;
                                         }
                                     }
                                 } catch (error) {
@@ -2463,6 +2485,7 @@
                 console.error("Error in fetch:", error);
                 
                 // Show error message to the user
+                simulatorMessage.classList.remove('loading');
                 simulatorMessage.innerHTML = `
                     <div style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 4px;">
                         <strong>Connection error:</strong> Unable to get a response from the AI. 
@@ -2492,9 +2515,9 @@
         /**
          * Speaks the given text. If another speech is in progress, queues the text.
          * @param {string} text - The text to be spoken.
-         * @param {number} endingSilenceMs - Optional silence duration after speech.
+         * @param {HTMLElement} messageElement - The message element to update when audio starts.
          */
-        function speak(text) {
+        function speak(text, messageElement) {
             if (!azureConfig) {
                 console.error("Azure configuration is not set.");
                 return;
@@ -2541,6 +2564,18 @@
                                 });
                             }
                             
+                            // Update the message element with the actual text when audio starts playing
+                            if (messageElement) {
+                                messageElement.classList.remove('loading');
+                                messageElement.textContent = messageElement.dataset.pendingText || text;
+                                
+                                // Scroll to the latest message
+                                const chatHistory = document.getElementById('chatHistory');
+                                if (chatHistory) {
+                                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                                }
+                            }
+                            
                             // Resume the timer here when audio starts playing
                             if (isMainTimerActive && !isPaused) {
                                 startMainTimer();
@@ -2572,6 +2607,12 @@
                     console.error(`[DEBUG] Error during speech synthesis:`, error);
                     idleVideo.hidden = false;
                     talkingVideo.hidden = true;
+                    
+                    // If there's an error with speech synthesis, display the message anyway
+                    if (messageElement) {
+                        messageElement.classList.remove('loading');
+                        messageElement.textContent = messageElement.dataset.pendingText || text;
+                    }
                     
                     // If there's an error with speech synthesis, we should still resume the timer
                     if (wasMainTimerActive && !isPaused) {
