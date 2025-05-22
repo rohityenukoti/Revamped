@@ -83,6 +83,36 @@
         min-width: 200px; /* Add minimum width */
         white-space: nowrap; /* Prevent text wrapping */
     }
+    
+    /* Timer active animation */
+    @keyframes timer-pulse {
+        0% { background-color: #fff; }
+        50% { background-color: #c4e3ff; }
+        100% { background-color: #99d1ff; }
+    }
+    
+    #timerContainer.timer-active {
+        animation: timer-pulse 2s infinite;
+        border-left: 4px solid #4CAF50;
+    }
+    
+    /* Add a paused state visual indicator */
+    #timerContainer.timer-paused {
+        border-left: 4px solid #ff4d4d;
+    }
+    
+    /* Add a "PAUSED" label that shows when timer is paused */
+    #timerContainer.timer-paused::before {
+        content: "PAUSED";
+        position: absolute;
+        left: -40px;
+        background-color: #ff4d4d;
+        color: white;
+        padding: 2px 6px;
+        font-size: 10px;
+        border-radius: 2px;
+        font-weight: bold;
+    }
 
     #toggleIcon {
         position: absolute;
@@ -2369,6 +2399,10 @@
             if (wasMainTimerActive && !isPaused) {
                 pausedTime = totalTime;
                 clearInterval(timerInterval);
+                // Update timer classes for visual feedback
+                const timerContainer = document.getElementById('timerContainer');
+                timerContainer.classList.remove('timer-active');
+                timerContainer.classList.add('timer-paused');
             }
 
             // For 'bring your data' scenario, chat API currently has long (4s+) latency
@@ -2496,6 +2530,8 @@
                 
                 // Resume timer if there was an error in API response
                 if (wasMainTimerActive && !isPaused) {
+                    // Remove paused indicator first
+                    document.getElementById('timerContainer').classList.remove('timer-paused');
                     startMainTimer();
                     wasMainTimerActive = false; // Reset the flag to prevent double resumption
                 }
@@ -2578,6 +2614,8 @@
                             
                             // Resume the timer here when audio starts playing
                             if (isMainTimerActive && !isPaused) {
+                                // Remove paused indicator first
+                                document.getElementById('timerContainer').classList.remove('timer-paused');
                                 startMainTimer();
                             }
                         };
@@ -2616,6 +2654,8 @@
                     
                     // If there's an error with speech synthesis, we should still resume the timer
                     if (wasMainTimerActive && !isPaused) {
+                        // Remove paused indicator first
+                        document.getElementById('timerContainer').classList.remove('timer-paused');
                         startMainTimer();
                     }
                     
@@ -2920,6 +2960,8 @@ Please fill in the "Completed" field for each checklist item based on the chat h
       isMainTimerActive = false;
       // Make timer visible when starting
       document.getElementById('timerWidget').classList.remove('minimized');
+      // Add timer-active class to show animation
+      document.getElementById('timerContainer').classList.add('timer-active');
       timerInterval = setInterval(function() {
         updateTimerDisplay(--totalTime);
         if (totalTime <= 0) {
@@ -2940,6 +2982,8 @@ Please fill in the "Completed" field for each checklist item based on the chat h
       document.getElementById('readingTimeLabel').textContent = 'Consultation Time';
       updateTimerDisplay(totalTime);
       updateVisualIndicator();
+      // Add timer-active class to show animation
+      document.getElementById('timerContainer').classList.add('timer-active');
       // Clear any existing interval before starting a new one
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(updateMainTimer, 1000);
@@ -3004,6 +3048,10 @@ Please fill in the "Completed" field for each checklist item based on the chat h
       updateTimerDisplay(totalTime);
       document.getElementById('readingTimeLabel').textContent = 'Reading Time';
       document.getElementById('timerWidget').style.borderColor = 'rgba(255, 255, 255, 0.9)';
+      // Remove timer animation classes
+      const timerContainer = document.getElementById('timerContainer');
+      timerContainer.classList.remove('timer-active');
+      timerContainer.classList.remove('timer-paused');
       isRunning = false;
       isMainTimerActive = false;
       hasMainTimerStarted = false;
@@ -3680,6 +3728,7 @@ Please fill in the "Completed" field for each checklist item based on the chat h
     // Add togglePauseSession function
     window.togglePauseSession = function() {
         const pauseResumeButton = document.getElementById('pauseResumeSession');
+        const timerContainer = document.getElementById('timerContainer');
         
         if (!isPaused) {
             // Pause the session
@@ -3688,6 +3737,10 @@ Please fill in the "Completed" field for each checklist item based on the chat h
             clearInterval(timerInterval);
             pauseResumeButton.innerHTML = '▶️ Resume';
             
+            // Update timer classes for visual feedback
+            timerContainer.classList.remove('timer-active');
+            timerContainer.classList.add('timer-paused');
+            
             // Disable microphone while paused
             document.getElementById('microphone').disabled = true;
             document.getElementById('userMessageBox').contentEditable = false;
@@ -3695,6 +3748,9 @@ Please fill in the "Completed" field for each checklist item based on the chat h
             // Resume the session
             isPaused = false;
             pauseResumeButton.innerHTML = '⏸️ Pause';
+            
+            // Update timer classes for visual feedback
+            timerContainer.classList.remove('timer-paused');
             
             // Re-enable microphone
             document.getElementById('microphone').disabled = false;
@@ -3706,6 +3762,8 @@ Please fill in the "Completed" field for each checklist item based on the chat h
             } else {
                 startPreliminaryTimer();
             }
+            
+            // Animation class will be added by startMainTimer or startPreliminaryTimer
         }
     };
 
