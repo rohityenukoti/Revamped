@@ -1510,6 +1510,12 @@
                 resetSubmitButton();
             }
         }
+        
+        // Prevent text copying and replace with copyright message
+        document.addEventListener('copy', function(e) {
+            e.preventDefault();
+            e.clipboardData.setData('text/plain', 'Made by TuringMedSchool - turingmedschool.com');
+        });
     </script>
 </body>
 </html> 
