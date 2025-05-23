@@ -2977,7 +2977,12 @@ Please fill in the "Completed" field for each checklist item based on the chat h
           // Automatically transition to consultation screen
           document.getElementById('caseInfoState').classList.add('hidden');
           document.getElementById('consultationState').classList.remove('hidden');
+          // Reset findings state when entering room
+          resetFindingsState();
+          // Start the main timer
           startMainTimer();
+          // Start the session to enable microphone
+          startSession();
         }
       }, 1000);
       playAudio('https://rohityenukoti.github.io/plab2timer/begin.mp3');
@@ -3064,7 +3069,6 @@ Please fill in the "Completed" field for each checklist item based on the chat h
       isRunning = false;
       isMainTimerActive = false;
       hasMainTimerStarted = false;
-      window.parent.postMessage({type: 'resetSections'}, '*');
     }
 
     function flashTimer() {
@@ -3577,25 +3581,25 @@ Please fill in the "Completed" field for each checklist item based on the chat h
         });
     });
 
+    // Function to reset findings state - moved outside DOMContentLoaded for global access
+    function resetFindingsState() {
+        const findingsText = document.getElementById('findingsText-sidebar');
+        const findingsImage = document.getElementById('findingsImage-sidebar');
+        const revealButton = document.getElementById('revealFindings');
+        const toggleIcon = document.getElementById('toggleFindings');
+        
+        if (findingsText) findingsText.classList.add('hidden');
+        if (findingsImage) findingsImage.classList.add('hidden');
+        if (revealButton) revealButton.style.display = 'block';
+        if (toggleIcon) toggleIcon.style.display = 'none';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const beginReadingButton = document.getElementById('beginReadingButton');
         const enterRoomButton = document.getElementById('enterRoomButton');
         const initialState = document.getElementById('initialState');
         const caseInfoState = document.getElementById('caseInfoState');
         const consultationState = document.getElementById('consultationState');
-
-        // Function to reset findings state
-        function resetFindingsState() {
-            const findingsText = document.getElementById('findingsText-sidebar');
-            const findingsImage = document.getElementById('findingsImage-sidebar');
-            const revealButton = document.getElementById('revealFindings');
-            const toggleIcon = document.getElementById('toggleFindings');
-            
-            if (findingsText) findingsText.classList.add('hidden');
-            if (findingsImage) findingsImage.classList.add('hidden');
-            if (revealButton) revealButton.style.display = 'block';
-            if (toggleIcon) toggleIcon.style.display = 'none';
-        }
 
         beginReadingButton.addEventListener('click', function() {
             initialState.classList.add('hidden');
@@ -3680,7 +3684,6 @@ Please fill in the "Completed" field for each checklist item based on the chat h
         isRunning = false;
         isMainTimerActive = false;
         hasMainTimerStarted = false;
-        window.parent.postMessage({type: 'resetSections'}, '*');
         
         // Hide buttons and input bar
         document.getElementById('endSession').style.display = 'none';
