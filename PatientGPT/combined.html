@@ -3053,6 +3053,7 @@ Please fill in the "Completed" field for each checklist item based on the chat h
       totalTime = 90;
       mainTimerTime = 480;
       pausedTime = 0;
+      isPaused = false; // Reset the pause state
       updateTimerDisplay(totalTime);
       document.getElementById('readingTimeLabel').textContent = 'Reading Time';
       document.getElementById('timerWidget').style.borderColor = 'rgba(255, 255, 255, 0.9)';
@@ -3668,9 +3669,14 @@ Please fill in the "Completed" field for each checklist item based on the chat h
         totalTime = 90;
         mainTimerTime = 480;
         pausedTime = 0;
+        isPaused = false; // Reset the pause state
         updateTimerDisplay(totalTime);
         document.getElementById('readingTimeLabel').textContent = 'Reading Time';
         document.getElementById('timerWidget').style.borderColor = 'rgba(255, 255, 255, 0.9)';
+              // Remove timer animation classes
+        const timerContainer = document.getElementById('timerContainer');
+        timerContainer.classList.remove('timer-active');
+        timerContainer.classList.remove('timer-paused');
         isRunning = false;
         isMainTimerActive = false;
         hasMainTimerStarted = false;
