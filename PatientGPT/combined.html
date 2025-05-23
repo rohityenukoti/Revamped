@@ -2248,9 +2248,17 @@
                 // Save chat history before hiding
                 const chatHistoryContent = chatHistory.innerHTML;
                 if (chatHistoryContent) {
+                    // Convert HTML to plain text using the same logic as evaluation
+                    const chatHistoryPlain = chatHistoryContent
+                        .replace(/<div class="chat-message doctor-message"[^>]*>/g, "Doctor: ")
+                        .replace(/<div class="chat-message simulator-message"[^>]*>/g, "Simulator: ")
+                        .replace(/<\/div>/g, " | ")
+                        .trim()
+                        .replace(/\|\s*$/g, "");
+                        
                     window.parent.postMessage({
                         type: 'saveChatHistory',
-                        chatHistory: chatHistoryContent
+                        chatHistory: chatHistoryPlain
                     }, '*');
                 }
                 chatHistory.style.display = 'none';  // Hide chat history
@@ -2787,8 +2795,8 @@
             // Convert HTML chat history to plain text before sending
             const chatHistoryHTML = document.getElementById('chatHistory').innerHTML;
             const chatHistoryPlain = chatHistoryHTML
-                .replace(/<div class="chat-message doctor-message">/g, "Doctor: ")
-                .replace(/<div class="chat-message simulator-message">/g, "Simulator: ")
+                .replace(/<div class="chat-message doctor-message"[^>]*>/g, "Doctor: ")
+                .replace(/<div class="chat-message simulator-message"[^>]*>/g, "Simulator: ")
                 .replace(/<\/div>/g, " | ")
                 .trim()
                 .replace(/\|\s*$/g, "");

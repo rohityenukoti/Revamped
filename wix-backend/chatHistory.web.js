@@ -6,13 +6,8 @@ export const saveChatHistoryToMediaManager = webMethod(
     Permissions.SiteMember,
     async (chatHistory, caseName, userEmail) => {
         try {
-            // Convert HTML chat history to plain text with separator
-            const plainTextHistory = chatHistory
-                .replace(/<div class="chat-message doctor-message">/g, "Doctor: ")
-                .replace(/<div class="chat-message simulator-message">/g, "Simulator: ")
-                .replace(/<\/div>/g, " | ")  // Use pipe separator instead of newline
-                .trim()
-                .replace(/\|\s*$/g, "");     // Remove trailing separator if exists
+            // The chatHistory is now already converted to plain text in the frontend
+            const plainTextHistory = chatHistory;
 
             if (!userEmail) {
                 throw new Error("User email not provided");
