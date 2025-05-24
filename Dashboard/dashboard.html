@@ -885,12 +885,14 @@
             display: flex;
             gap: 20px;
             justify-content: center;
+            align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .main-action-btn {
-            padding: 20px 40px;
-            font-size: 1.2em;
+            padding: 20px 30px;
+            font-size: 1.1em;
             background-color: white;
             border: 4px solid black;
             border-radius: 0;
@@ -898,7 +900,9 @@
             font-weight: bold;
             box-shadow: 8px 8px 0 black;
             transition: transform 0.2s, box-shadow 0.2s;
-            min-width: 300px;
+            min-width: 180px;
+            flex: 1;
+            max-width: 250px;
         }
 
         .main-action-btn:hover {
@@ -1453,7 +1457,7 @@
         <div id="welcome-message" class="welcome-message"></div>
         <div class="tabs full-width">
             <button class="tab active" data-tab="overview">🏠 Home</button>
-            <button class="tab" data-tab="casemap">🗺️ Case Map</button>
+            <button class="tab" data-tab="casemap">🧠 BrainBank</button>
             <button class="tab" data-tab="performance">📈 Progress</button>
             <button class="tab" data-tab="assistant">🤖 AI Tutor</button>
         </div>
@@ -1490,6 +1494,18 @@
                     <button class="main-action-btn view-cases-btn">
                         <span class="emoji">🗺️</span>
                         View All Cases
+                    </button>
+                    <button class="main-action-btn whatsapp-btn">
+                        <span class="emoji">📱</span>
+                        Join Our WhatsApp Group
+                    </button>
+                    <button class="main-action-btn mock-test-btn">
+                        <span class="emoji">👥</span>
+                        Free Mocks & Practice Sessions
+                    </button>
+                    <button class="main-action-btn youtube-btn">
+                        <span class="emoji">📺</span>
+                        Check out our YouTube Channel
                     </button>
                 </div>
                 <!-- Practice options dialog -->
@@ -1599,7 +1615,7 @@
 
         <div id="casemap" class="tab-content">
             <div class="widget full-width">
-                <h2>🗺️ Case Map</h2>
+                <h2>🧠 BrainBank</h2>
                 
                 <!-- Add search container here -->
                 <div class="search-container">
@@ -3146,6 +3162,9 @@
         function initializeActionButtons() {
             const practiceBtn = document.querySelector('.practice-btn');
             const viewCasesBtn = document.querySelector('.view-cases-btn');
+            const whatsappBtn = document.querySelector('.whatsapp-btn');
+            const mockTestBtn = document.querySelector('.mock-test-btn');
+            const youtubeBtn = document.querySelector('.youtube-btn');
             const practiceOptions = document.querySelector('.practice-options');
             const mainActions = document.querySelector('.main-actions');
             const partnerBtn = document.querySelector('.partner-btn');
@@ -3160,6 +3179,50 @@
             viewCasesBtn.addEventListener('click', () => {
                 // Switch to the case map tab
                 document.querySelector('[data-tab="casemap"]').click();
+            });
+
+            whatsappBtn.addEventListener('click', () => {
+                // Add loading state
+                whatsappBtn.classList.add('loading');
+                
+                // Open WhatsApp group link in a new tab
+                // You can replace this URL with your actual WhatsApp group link
+                window.open('https://chat.whatsapp.com/BynXfqP1v9U6oa2B37gaWi', '_blank');
+                
+                // Remove loading state after a brief delay
+                setTimeout(() => {
+                    whatsappBtn.classList.remove('loading');
+                }, 1000);
+            });
+
+            mockTestBtn.addEventListener('click', () => {
+                // Add loading state
+                mockTestBtn.classList.add('loading');
+                
+                try {
+                    // Navigate to the event list page
+                    window.parent.postMessage({
+                        type: 'navigate',
+                        data: { url: '/event-list' }
+                    }, '*');
+                } catch (error) {
+                    console.error('Navigation error:', error);
+                    mockTestBtn.classList.remove('loading');
+                }
+            });
+
+            youtubeBtn.addEventListener('click', () => {
+                // Add loading state
+                youtubeBtn.classList.add('loading');
+                
+                // Open YouTube channel link in a new tab
+                // You can replace this URL with your actual YouTube channel link
+                window.open('https://www.youtube.com/channel/UCo5GPMPALZSahM3PF36bZhw', '_blank');
+                
+                // Remove loading state after a brief delay
+                setTimeout(() => {
+                    youtubeBtn.classList.remove('loading');
+                }, 1000);
             });
 
             // Remove hardcoded allowed topics and use the user's plan topics instead
