@@ -3501,13 +3501,15 @@
                     const whoYourPatientIs = document.getElementById('whoYourPatientIs')?.textContent || '';
                     const otherInformation = document.getElementById('otherInformation')?.textContent || '';
                     const whatYouMustDo = document.getElementById('whatYouMustDo')?.textContent || '';
+                    const specialNote = document.getElementById('specialNote')?.textContent || '';
                     
                     // Create info items
                     const infoItems = [
                         { label: 'Where are you?', content: whereAreYou },
                         { label: 'Who is your patient?', content: whoYourPatientIs },
                         { label: 'Other Information', content: otherInformation },
-                        { label: 'What you must do', content: whatYouMustDo }
+                        { label: 'What you must do', content: whatYouMustDo },
+                        { label: 'Special Note', content: specialNote }
                     ];
                     
                     // Add each info item to the grid
