@@ -2446,6 +2446,15 @@
             </div>
             
             <div id="performance-sections">
+                <!-- Total Score Section -->
+                <div class="info-box" id="total-score-section">
+                    <div style="padding: 10px;">
+                        <div class="domain-score" id="totalScore" style="font-size: 1.3em; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                            Total Score: <span id="totalScoreValue">N/A</span> / 12
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="info-box">
                     <div class="info-box-title">Data Gathering</div>
                     <div style="padding: 10px;">
@@ -2456,15 +2465,15 @@
                         </div>
                         <div class="performance-flex-container" id="dataGatheringContainer">
                             <div class="performance-column">
-                                <h4>✅ Covered Points</h4>
+                                <h4>✅ Covered</h4>
                                 <div id="dataGatheringCovered"></div>
                             </div>
                             <div class="performance-column" id="dataGatheringPartialColumn" style="display: none;">
-                                <h4>🔶 Partial Points</h4>
+                                <h4>🔶 Partially Covered</h4>
                                 <div id="dataGatheringPartial"></div>
                             </div>
                             <div class="performance-column">
-                                <h4>❌ Missed Points</h4>
+                                <h4>❌ Missed</h4>
                                 <div id="dataGatheringMissed"></div>
                             </div>
                         </div>
@@ -2481,15 +2490,15 @@
                         </div>
                         <div class="performance-flex-container" id="managementContainer">
                             <div class="performance-column">
-                                <h4>✅ Covered Points</h4>
+                                <h4>✅ Covered</h4>
                                 <div id="managementCovered"></div>
                             </div>
                             <div class="performance-column" id="managementPartialColumn" style="display: none;">
-                                <h4>🔶 Partial Points</h4>
+                                <h4>🔶 Partially Covered</h4>
                                 <div id="managementPartial"></div>
                             </div>
                             <div class="performance-column">
-                                <h4>❌ Missed Points</h4>
+                                <h4>❌ Missed</h4>
                                 <div id="managementMissed"></div>
                             </div>
                         </div>
@@ -2506,15 +2515,15 @@
                         </div>
                         <div class="performance-flex-container" id="interpersonalSkillsContainer">
                             <div class="performance-column">
-                                <h4>✅ Covered Points</h4>
+                                <h4>✅ Covered</h4>
                                 <div id="interpersonalSkillsCovered"></div>
                             </div>
                             <div class="performance-column" id="interpersonalSkillsPartialColumn" style="display: none;">
-                                <h4>🔶 Partial Points</h4>
+                                <h4>🔶 Partially Covered</h4>
                                 <div id="interpersonalSkillsPartial"></div>
                             </div>
                             <div class="performance-column">
-                                <h4>❌ Missed Points</h4>
+                                <h4>❌ Missed</h4>
                                 <div id="interpersonalSkillsMissed"></div>
                             </div>
                         </div>
@@ -3059,6 +3068,10 @@
         document.getElementById('performance-sections').style.display = 'block';
         document.getElementById('timestampSelector').style.display = 'block';
         
+        // Calculate total score
+        let totalScore = 0;
+        let hasValidScores = false;
+        
         // Update the UI for each domain
         const domains = ['dataGathering', 'management', 'interpersonalSkills'];
         
@@ -3094,8 +3107,13 @@
                     if (missedList) missedList.innerHTML = createHTMLList(results[domain].missed || []);
                 }
                 
-                // Update the score display
+                // Update the score display and add to total
                 if (scoreElement && results[domain].score) {
+                    const domainScore = typeof results[domain].score === 'string' ? parseInt(results[domain].score) : Math.round(results[domain].score);
+                    if (!isNaN(domainScore)) {
+                        totalScore += domainScore;
+                        hasValidScores = true;
+                    }
                     scoreElement.innerHTML = `Score: <span style="color: ${getScoreColor(results[domain].score)};">${results[domain].score}</span>`;
                 } else if (scoreElement) {
                     scoreElement.innerHTML = 'Score: N/A';
@@ -3127,6 +3145,16 @@
                 }
             }
         });
+        
+        // Update total score display
+        const totalScoreElement = document.getElementById('totalScoreValue');
+        if (totalScoreElement) {
+            if (hasValidScores) {
+                totalScoreElement.innerHTML = `<span style="color: ${getTotalScoreColor(totalScore)}; font-weight: bold;">${totalScore}</span>`;
+            } else {
+                totalScoreElement.textContent = 'N/A';
+            }
+        }
     }
 
     function getScoreColor(score) {
@@ -3139,11 +3167,25 @@
         return '#dc3545'; // Red for low scores
     }
 
+    function getTotalScoreColor(totalScore) {
+        // Color coding for total score out of 12
+        if (totalScore >= 9) return '#28a745'; // Green for excellent scores (9-12)
+        if (totalScore >= 6) return '#fd7e14'; // Orange for good scores (6-8)
+        if (totalScore >= 3) return '#ffc107'; // Yellow for fair scores (3-5)
+        return '#dc3545'; // Red for poor scores (0-2)
+    }
+
     function clearAllResults() {
         // Show no data message and hide performance sections
         document.getElementById('no-performance-data').style.display = 'block';
         document.getElementById('performance-sections').style.display = 'none';
         document.getElementById('timestampSelector').style.display = 'none';
+        
+        // Clear total score
+        const totalScoreElement = document.getElementById('totalScoreValue');
+        if (totalScoreElement) {
+            totalScoreElement.textContent = 'N/A';
+        }
         
         ['dataGathering', 'management', 'interpersonalSkills'].forEach(domain => {
             document.getElementById(`${domain}Covered`).innerHTML = '';
