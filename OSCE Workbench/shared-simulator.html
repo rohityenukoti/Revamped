@@ -1079,6 +1079,16 @@
                     label.className = 'checklist-option-label';
                     label.textContent = option.label;
                     
+                    // Add click event listener to the entire option div to make it fully clickable
+                    optionDiv.addEventListener('click', (e) => {
+                        // Prevent double-triggering if the radio button itself was clicked
+                        if (e.target !== radio) {
+                            radio.checked = true;
+                            // Manually trigger the change event since programmatic changes don't fire it
+                            radio.dispatchEvent(new Event('change'));
+                        }
+                    });
+                    
                     optionDiv.appendChild(radio);
                     optionDiv.appendChild(label);
                     optionsContainer.appendChild(optionDiv);
