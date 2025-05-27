@@ -2080,6 +2080,9 @@
             <button class="close-button" onclick="closePerformanceLightbox()">×</button>
         </div>
         <div class="main-container">
+            <div style="margin-bottom: 10px; text-align: center; font-size: 0.9em; background-color: #f8f9fa; padding: 8px;">
+                DG: Data Gathering, MG: Management, IS: Interpersonal Skills
+            </div>
             <div id="timestampContainer">
                 <label for="timestampSelector">Select Timestamp:</label>
                 <select id="timestampSelector"></select>
@@ -3402,11 +3405,14 @@ Please fill in the "Status" field for each checklist item based on the chat hist
             const hasPartialData = data.partial && data.partial.length > 0;
             const gridColumns = hasPartialData ? '1fr 1fr 1fr' : '1fr 1fr';
 
+            // Round the score to the nearest integer
+            const roundedScore = Math.round(parseFloat(data.score || 0));
+
             return `
                 <div class="evaluation-section">
                     <h3>${titleWithEmoji}</h3>
                     <div class="score-display" title="Score out of 4" style="margin-bottom: 15px;">
-                        <span class="score-value">${data.score || "0.00"}</span>
+                        <span class="score-value">${roundedScore}</span>
                         <span class="score-max">/4</span>
                     </div>
                     <div class="evaluation-grid" style="grid-template-columns: ${gridColumns};">
@@ -3434,11 +3440,11 @@ Please fill in the "Status" field for each checklist item based on the chat hist
             return `<ul>${items.map(item => `<li>${emoji} ${item}</li>`).join("")}</ul>`;
         }
 
-            // Calculate the overall score (sum of all domain scores)
-    const dataGatheringScore = parseFloat(results.dataGathering.score || 0);
-    const managementScore = parseFloat(results.management.score || 0);
-    const interpersonalScore = parseFloat(results.interpersonalSkills.score || 0);
-    const overallScore = (dataGatheringScore + managementScore + interpersonalScore).toFixed(0);
+            // Calculate the overall score (sum of all domain scores) and round it
+    const dataGatheringScore = Math.round(parseFloat(results.dataGathering.score || 0));
+    const managementScore = Math.round(parseFloat(results.management.score || 0));
+    const interpersonalScore = Math.round(parseFloat(results.interpersonalSkills.score || 0));
+    const overallScore = dataGatheringScore + managementScore + interpersonalScore;
     
     // Update overall score display
     document.getElementById('overallScore').textContent = overallScore;
