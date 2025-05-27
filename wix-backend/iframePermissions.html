@@ -11,7 +11,7 @@
 
     document.querySelectorAll('iframe').forEach(addPermissions)
 
-    const observer = new MutationObserver(function(mutationsList, observer) {
+    const observer = new MutationObserver(function(mutationsList, mutationObserver) {
         for (let mutation of mutationsList) {
             if (mutation.addedNodes && mutation.addedNodes.length) {
                 for (let node of mutation.addedNodes) {
