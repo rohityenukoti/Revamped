@@ -2710,7 +2710,8 @@
             interpersonalSkills: { covered: [], missed: [] }
         },
         loading: false,
-        treeView: null
+        treeView: null,
+        pendingCaseSelection: null // Add this to store pending case selection
     };
 
     // Initialize TreeView instance
@@ -2760,6 +2761,12 @@
     function updateTreeView(data) {
         if (state.treeView) {
             state.treeView.setData(data);
+            
+            // Apply pending case selection if available
+            if (state.pendingCaseSelection) {
+                state.treeView.setSelected(state.pendingCaseSelection);
+                state.pendingCaseSelection = null; // Clear the pending selection
+            }
         }
     }
 
@@ -3040,6 +3047,17 @@
             // Update checklist
             if (data.checklist) {
                 updateChecklist(data.checklist);
+            }
+            
+            // Highlight the selected case in TreeView if caseId is provided
+            if (data.caseId) {
+                if (state.treeView && state.treeView.data) {
+                    // TreeView is ready and has data, apply selection immediately
+                    state.treeView.setSelected(data.caseId);
+                } else {
+                    // TreeView is not ready or doesn't have data yet, store as pending selection
+                    state.pendingCaseSelection = data.caseId;
+                }
             }
         } finally {
             hideLoading();
