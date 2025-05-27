@@ -640,9 +640,9 @@ async function loadAnswers(caseName, timestampIndex, retryCount = 0) {
     const isRemarks = caseResponses.interpersonalSkills?.remarks || null;
 
     const results = {
-        dataGathering: { covered: [], missed: [], score: dgScore, remarks: dgRemarks },
-        management: { covered: [], missed: [], score: mgScore, remarks: mgRemarks },
-        interpersonalSkills: { covered: [], missed: [], score: isScore, remarks: isRemarks }
+        dataGathering: { covered: [], missed: [], partial: [], score: dgScore, remarks: dgRemarks },
+        management: { covered: [], missed: [], partial: [], score: mgScore, remarks: mgRemarks },
+        interpersonalSkills: { covered: [], missed: [], partial: [], score: isScore, remarks: isRemarks }
     };
 
     const domainMapping = {
@@ -663,13 +663,37 @@ async function loadAnswers(caseName, timestampIndex, retryCount = 0) {
         if (!domainKey) return;
 
         const domainIndex = domainIndices[domainKey];
-        const isChecked = caseResponses[domainKey] && 
-                         caseResponses[domainKey].booleanArray && 
-                         caseResponses[domainKey].booleanArray[domainIndex];
+        const domainData = caseResponses[domainKey];
+        
+        if (!domainData) {
+            results[domainKey].missed.push(item.Point);
+            domainIndices[domainKey]++;
+            return;
+        }
 
-        if (isChecked) {
-            results[domainKey].covered.push(item.Point);
+        // Check if we have scoreArray (new format) or booleanArray (old format)
+        if (domainData.scoreArray && Array.isArray(domainData.scoreArray)) {
+            // New scoreArray format: 0 = missed, 0.5 = partial, 1 = covered
+            const score = domainData.scoreArray[domainIndex];
+            
+            if (score === 1) {
+                results[domainKey].covered.push(item.Point);
+            } else if (score === 0.5) {
+                results[domainKey].partial.push(item.Point);
+            } else {
+                results[domainKey].missed.push(item.Point);
+            }
+        } else if (domainData.booleanArray && Array.isArray(domainData.booleanArray)) {
+            // Old booleanArray format: true = covered, false = missed
+            const isChecked = domainData.booleanArray[domainIndex];
+            
+            if (isChecked) {
+                results[domainKey].covered.push(item.Point);
+            } else {
+                results[domainKey].missed.push(item.Point);
+            }
         } else {
+            // No data available, mark as missed
             results[domainKey].missed.push(item.Point);
         }
 

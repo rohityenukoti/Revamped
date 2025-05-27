@@ -986,6 +986,11 @@
         border: 2px solid #ff4d4d;
     }
 
+    .partial-column {
+        background-color: #fff8e1;  /* Light orange background */
+        border: 2px solid #ff9800;
+    }
+
     .column-header {
         font-weight: bold;
         margin-bottom: 1em;
@@ -999,6 +1004,10 @@
 
     .missed-column .column-header {
         color: #c62828;  /* Darker red */
+    }
+
+    .partial-column .column-header {
+        color: #e65100;  /* Darker orange */
     }
 
     #evaluationResults ul {
@@ -1026,7 +1035,7 @@
         }
         
         .evaluation-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr !important; /* Force single column on mobile regardless of 2 or 3 column layout */
             gap: 1em;
         }
     }
@@ -2868,7 +2877,12 @@
                     messages: [
                         {
                             role: "system",
-                            content: `You are a helpful assistant that evaluates chat history against a checklist. You will mark the checklist based on the chat history provided.
+                            content: `You are a helpful assistant that evaluates chat history against a checklist. This chat history contains the conversation between the doctor and the patient. You will mark the checklist based on the chat history provided that helps evaluate the doctor's performance.
+
+For each checklist item, evaluate whether it was:
+- "covered": Fully addressed and completed in the conversation by the doctor
+- "partial": Partially addressed but not fully completed or explored by the doctor
+- "missed": Not addressed at all in the conversation by the doctor
 
 The JSON format should look like this:
 {
@@ -2876,13 +2890,13 @@ The JSON format should look like this:
     {
       "Domain": "Data Gathering",
       "Point": "Confirm patient identifiers: Catherine Malton's full name, age, and relation to the caller.",
-      "Completed": true/false
+      "Status": "covered" | "partial" | "missed"
     },
     ...
   ]
 }
 
-Please fill in the "Completed" field for each checklist item based on the chat history. Your response must be valid JSON and nothing else meaning no trailing text or markdown code blocks.`
+Please fill in the "Status" field for each checklist item based on the chat history. Use "covered" for fully completed items, "partial" for items that were touched on but not fully explored, and "missed" for items not addressed at all. Your response must be valid JSON and nothing else meaning no trailing text or markdown code blocks.`
                         },
                         {
                             role: "user",
@@ -3383,6 +3397,10 @@ Please fill in the "Completed" field for each checklist item based on the chat h
                     titleWithEmoji = title;
             }
 
+            // Check if we have partial data (scoreArray format)
+            const hasPartialData = data.partial && data.partial.length > 0;
+            const gridColumns = hasPartialData ? '1fr 1fr 1fr' : '1fr 1fr';
+
             return `
                 <div class="evaluation-section">
                     <h3>${titleWithEmoji}</h3>
@@ -3390,7 +3408,7 @@ Please fill in the "Completed" field for each checklist item based on the chat h
                         <span class="score-value">${data.score || "0.00"}</span>
                         <span class="score-max">/4</span>
                     </div>
-                    <div class="evaluation-grid">
+                    <div class="evaluation-grid" style="grid-template-columns: ${gridColumns};">
                         <div class="evaluation-column covered-column">
                             <div class="column-header">Covered</div>
                             ${createHTMLList(data.covered, '✅')}
@@ -3399,6 +3417,12 @@ Please fill in the "Completed" field for each checklist item based on the chat h
                             <div class="column-header">Missed</div>
                             ${createHTMLList(data.missed, '❌')}
                         </div>
+                        ${hasPartialData ? `
+                        <div class="evaluation-column partial-column">
+                            <div class="column-header">Partial</div>
+                            ${createHTMLList(data.partial, '🔶')}
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             `;

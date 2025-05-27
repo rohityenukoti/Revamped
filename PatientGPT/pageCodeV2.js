@@ -601,16 +601,19 @@ function displayResults(checklist, responses) {
         dataGathering: { 
             covered: [], 
             missed: [], 
+            partial: [],
             score: responses.dataGathering?.score || "0.00" 
         },
         management: { 
             covered: [], 
             missed: [], 
+            partial: [],
             score: responses.management?.score || "0.00" 
         },
         interpersonalSkills: { 
             covered: [], 
             missed: [], 
+            partial: [],
             score: responses.interpersonalSkills?.score || "0.00" 
         }
     };
@@ -622,14 +625,40 @@ function displayResults(checklist, responses) {
             return;
         }
         const domainIndex = domainIndices[domainKey];
-        const isChecked = responses[domainKey] && responses[domainKey].booleanArray
-           ? responses[domainKey].booleanArray[domainIndex]
-           : false;
-        if (isChecked) {
-            results[domainKey].covered.push(item.Point);
+        const domainData = responses[domainKey];
+        
+        if (!domainData) {
+            results[domainKey].missed.push(item.Point);
+            domainIndices[domainKey]++;
+            return;
+        }
+
+        // Check if we have scoreArray (new format) or booleanArray (old format)
+        if (domainData.scoreArray && Array.isArray(domainData.scoreArray)) {
+            // New scoreArray format: 0 = missed, 0.5 = partial, 1 = covered
+            const score = domainData.scoreArray[domainIndex];
+            
+            if (score === 1) {
+                results[domainKey].covered.push(item.Point);
+            } else if (score === 0.5) {
+                results[domainKey].partial.push(item.Point);
+            } else {
+                results[domainKey].missed.push(item.Point);
+            }
+        } else if (domainData.booleanArray && Array.isArray(domainData.booleanArray)) {
+            // Old booleanArray format: true = covered, false = missed
+            const isChecked = domainData.booleanArray[domainIndex];
+            
+            if (isChecked) {
+                results[domainKey].covered.push(item.Point);
+            } else {
+                results[domainKey].missed.push(item.Point);
+            }
         } else {
+            // No data available, mark as missed
             results[domainKey].missed.push(item.Point);
         }
+        
         domainIndices[domainKey]++;
     });
     $combinedWidget.postMessage({ type: 'displayResults', results });
@@ -731,23 +760,32 @@ async function saveEvaluationResult(evaluationResult) {
         }
         const checklist = parsedResult.Checklist;
         const domainData = {
-            datagathering: { booleanArray: [], score: 0 },
-            management: { booleanArray: [], score: 0 },
-            interpersonalskills: { booleanArray: [], score: 0 }
+            datagathering: { scoreArray: [], score: 0 },
+            management: { scoreArray: [], score: 0 },
+            interpersonalskills: { scoreArray: [], score: 0 }
         };
         checklist.forEach(item => {
             if (item && item.Domain) {
                 const domainKey = item.Domain.toLowerCase().replace(/\s+/g, '');
                 if (domainData[domainKey]) {
-                    domainData[domainKey].booleanArray.push(!!item.Completed);
+                    // Convert status to score: covered = 1, partial = 0.5, missed = 0
+                    let score = 0;
+                    if (item.Status === 'covered') {
+                        score = 1;
+                    } else if (item.Status === 'partial') {
+                        score = 0.5;
+                    } else if (item.Status === 'missed') {
+                        score = 0;
+                    }
+                    domainData[domainKey].scoreArray.push(score);
                 }
             }
         });
         Object.keys(domainData).forEach(domain => {
-            const booleanArray = domainData[domain].booleanArray;
-            if (booleanArray.length > 0) {
-                const trueCount = booleanArray.filter(Boolean).length;
-                domainData[domain].score = ((trueCount / booleanArray.length) * 4).toFixed(2);
+            const scoreArray = domainData[domain].scoreArray;
+            if (scoreArray.length > 0) {
+                const totalScore = scoreArray.reduce((sum, score) => sum + score, 0);
+                domainData[domain].score = ((totalScore / scoreArray.length) * 4).toFixed(2);
             }
         });
         let userResponsesRecord = await wixData.query("userResponses")

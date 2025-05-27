@@ -321,6 +321,8 @@
             text-transform: uppercase;
         }
 
+
+
         /* Main layout - adjusting for fixed topbar */
         .main-container {
             display: block;
@@ -1977,20 +1979,21 @@
             }
         }
 
-        /* Performance section layout */
+        /* Performance section layout - updated for grid */
         .performance-flex-container {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Default 2-column layout, can be overridden to 1fr 1fr 1fr for 3 columns */
             gap: 20px;
         }
 
         .performance-column {
-            flex: 1;
+            /* Remove flex: 1 since we're using grid now */
         }
 
         /* Media query for mobile view of performance sections */
         @media (max-width: 768px) {
             .performance-flex-container {
-                flex-direction: column;
+                grid-template-columns: 1fr !important; /* Force single column on mobile regardless of 2 or 3 column layout */
             }
             
             .performance-column {
@@ -2455,7 +2458,7 @@
                             <div class="domain-remarks-title">Examiner's Remarks:</div>
                             <div id="dataGatheringRemarks"></div>
                         </div>
-                        <div class="performance-flex-container">
+                        <div class="performance-flex-container" id="dataGatheringContainer">
                             <div class="performance-column">
                                 <h4>✅ Covered Points</h4>
                                 <div id="dataGatheringCovered"></div>
@@ -2463,6 +2466,10 @@
                             <div class="performance-column">
                                 <h4>❌ Missed Points</h4>
                                 <div id="dataGatheringMissed"></div>
+                            </div>
+                            <div class="performance-column" id="dataGatheringPartialColumn" style="display: none;">
+                                <h4>🔶 Partial Points</h4>
+                                <div id="dataGatheringPartial"></div>
                             </div>
                         </div>
                     </div>
@@ -2476,7 +2483,7 @@
                             <div class="domain-remarks-title">Examiner's Remarks:</div>
                             <div id="managementRemarks"></div>
                         </div>
-                        <div class="performance-flex-container">
+                        <div class="performance-flex-container" id="managementContainer">
                             <div class="performance-column">
                                 <h4>✅ Covered Points</h4>
                                 <div id="managementCovered"></div>
@@ -2484,6 +2491,10 @@
                             <div class="performance-column">
                                 <h4>❌ Missed Points</h4>
                                 <div id="managementMissed"></div>
+                            </div>
+                            <div class="performance-column" id="managementPartialColumn" style="display: none;">
+                                <h4>🔶 Partial Points</h4>
+                                <div id="managementPartial"></div>
                             </div>
                         </div>
                     </div>
@@ -2497,7 +2508,7 @@
                             <div class="domain-remarks-title">Examiner's Remarks:</div>
                             <div id="interpersonalSkillsRemarks"></div>
                         </div>
-                        <div class="performance-flex-container">
+                        <div class="performance-flex-container" id="interpersonalSkillsContainer">
                             <div class="performance-column">
                                 <h4>✅ Covered Points</h4>
                                 <div id="interpersonalSkillsCovered"></div>
@@ -2505,6 +2516,10 @@
                             <div class="performance-column">
                                 <h4>❌ Missed Points</h4>
                                 <div id="interpersonalSkillsMissed"></div>
+                            </div>
+                            <div class="performance-column" id="interpersonalSkillsPartialColumn" style="display: none;">
+                                <h4>🔶 Partial Points</h4>
+                                <div id="interpersonalSkillsPartial"></div>
                             </div>
                         </div>
                     </div>
@@ -3054,12 +3069,34 @@
         domains.forEach(domain => {
             const coveredList = document.getElementById(`${domain}Covered`);
             const missedList = document.getElementById(`${domain}Missed`);
+            const partialList = document.getElementById(`${domain}Partial`);
+            const partialColumn = document.getElementById(`${domain}PartialColumn`);
+            const container = document.getElementById(`${domain}Container`);
             const scoreElement = document.getElementById(`${domain}Score`);
             const remarksElement = document.getElementById(`${domain}Remarks`);
             
             if (results[domain]) {
-                if (coveredList) coveredList.innerHTML = createHTMLList(results[domain].covered || []);
-                if (missedList) missedList.innerHTML = createHTMLList(results[domain].missed || []);
+                // Check if we have partial data (scoreArray format)
+                const hasPartialData = results[domain].partial && results[domain].partial.length > 0;
+                
+                if (hasPartialData) {
+                    // Show partial column and adjust layout for 3 columns
+                    if (partialColumn) partialColumn.style.display = 'block';
+                    if (container) container.style.gridTemplateColumns = '1fr 1fr 1fr';
+                    
+                    // Update all three lists
+                    if (coveredList) coveredList.innerHTML = createHTMLList(results[domain].covered || []);
+                    if (missedList) missedList.innerHTML = createHTMLList(results[domain].missed || []);
+                    if (partialList) partialList.innerHTML = createHTMLList(results[domain].partial || []);
+                } else {
+                    // Hide partial column and use 2-column layout
+                    if (partialColumn) partialColumn.style.display = 'none';
+                    if (container) container.style.gridTemplateColumns = '1fr 1fr';
+                    
+                    // Update only covered and missed lists
+                    if (coveredList) coveredList.innerHTML = createHTMLList(results[domain].covered || []);
+                    if (missedList) missedList.innerHTML = createHTMLList(results[domain].missed || []);
+                }
                 
                 // Update the score display
                 if (scoreElement && results[domain].score) {
@@ -3079,6 +3116,10 @@
                     }
                 }
             } else {
+                // Hide partial column and reset to 2-column layout
+                if (partialColumn) partialColumn.style.display = 'none';
+                if (container) container.style.gridTemplateColumns = '1fr 1fr';
+                
                 if (coveredList) coveredList.innerHTML = "<p>None</p>";
                 if (missedList) missedList.innerHTML = "<p>None</p>";
                 if (scoreElement) {
@@ -3111,6 +3152,15 @@
         ['dataGathering', 'management', 'interpersonalSkills'].forEach(domain => {
             document.getElementById(`${domain}Covered`).innerHTML = '';
             document.getElementById(`${domain}Missed`).innerHTML = '';
+            
+            // Clear partial column and hide it
+            const partialList = document.getElementById(`${domain}Partial`);
+            const partialColumn = document.getElementById(`${domain}PartialColumn`);
+            const container = document.getElementById(`${domain}Container`);
+            
+            if (partialList) partialList.innerHTML = '';
+            if (partialColumn) partialColumn.style.display = 'none';
+            if (container) container.style.gridTemplateColumns = '1fr 1fr';
             
             const scoreElement = document.getElementById(`${domain}Score`);
             if (scoreElement) {
