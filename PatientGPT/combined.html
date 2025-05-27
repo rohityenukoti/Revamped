@@ -3568,46 +3568,6 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         }
       }
       
-      resetSearchUI(caseItems, treeItems, noResultsElement) {
-        // Show all case items and remove highlighting
-        caseItems.forEach(item => {
-          item.style.display = '';
-          const span = item.querySelector('span');
-          if (span) {
-            span.innerHTML = span.textContent;
-          }
-          // Remove any synonym indicators
-          const indicator = item.querySelector('small');
-          if (indicator) {
-            indicator.remove();
-          }
-        });
-        
-        // Show all tree items but preserve their original state
-        treeItems.forEach(item => {
-          item.style.display = '';
-          // Don't remove the 'open' class - let the tree maintain its state
-          // item.classList.remove('open'); // REMOVED THIS LINE
-        });
-        
-        // Don't hide all tree item contents - only hide those that should be hidden
-        // based on the current tree state
-        // this.element.querySelectorAll('.tree-item-content').forEach(content => {
-        //   content.style.display = 'none';
-        // }); // REMOVED THIS BLOCK
-        
-        // Instead, only reset the display style for tree item contents
-        // and let the CSS handle the visibility based on the 'open' class
-        this.element.querySelectorAll('.tree-item-content').forEach(content => {
-          content.style.display = '';
-        });
-        
-        // Remove "no results" message if it exists
-        if (noResultsElement) {
-          noResultsElement.remove();
-        }
-      }
-      
       // Helper method to find case data by ID
       findCaseDataById(caseId) {
         const findInItems = (items) => {
