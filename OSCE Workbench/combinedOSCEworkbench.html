@@ -1984,11 +1984,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr; /* Default 2-column layout, can be overridden to 1fr 1fr 1fr for 3 columns */
             gap: 20px;
-        }
-
-        .performance-column {
-            /* Remove flex: 1 since we're using grid now */
-        }
+        }       /* .performance-column styles removed - using grid layout instead */
 
         /* Media query for mobile view of performance sections */
         @media (max-width: 768px) {
@@ -2463,13 +2459,13 @@
                                 <h4>✅ Covered Points</h4>
                                 <div id="dataGatheringCovered"></div>
                             </div>
-                            <div class="performance-column">
-                                <h4>❌ Missed Points</h4>
-                                <div id="dataGatheringMissed"></div>
-                            </div>
                             <div class="performance-column" id="dataGatheringPartialColumn" style="display: none;">
                                 <h4>🔶 Partial Points</h4>
                                 <div id="dataGatheringPartial"></div>
+                            </div>
+                            <div class="performance-column">
+                                <h4>❌ Missed Points</h4>
+                                <div id="dataGatheringMissed"></div>
                             </div>
                         </div>
                     </div>
@@ -2488,13 +2484,13 @@
                                 <h4>✅ Covered Points</h4>
                                 <div id="managementCovered"></div>
                             </div>
-                            <div class="performance-column">
-                                <h4>❌ Missed Points</h4>
-                                <div id="managementMissed"></div>
-                            </div>
                             <div class="performance-column" id="managementPartialColumn" style="display: none;">
                                 <h4>🔶 Partial Points</h4>
                                 <div id="managementPartial"></div>
+                            </div>
+                            <div class="performance-column">
+                                <h4>❌ Missed Points</h4>
+                                <div id="managementMissed"></div>
                             </div>
                         </div>
                     </div>
@@ -2513,13 +2509,13 @@
                                 <h4>✅ Covered Points</h4>
                                 <div id="interpersonalSkillsCovered"></div>
                             </div>
-                            <div class="performance-column">
-                                <h4>❌ Missed Points</h4>
-                                <div id="interpersonalSkillsMissed"></div>
-                            </div>
                             <div class="performance-column" id="interpersonalSkillsPartialColumn" style="display: none;">
                                 <h4>🔶 Partial Points</h4>
                                 <div id="interpersonalSkillsPartial"></div>
+                            </div>
+                            <div class="performance-column">
+                                <h4>❌ Missed Points</h4>
+                                <div id="interpersonalSkillsMissed"></div>
                             </div>
                         </div>
                     </div>

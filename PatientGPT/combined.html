@@ -3413,16 +3413,16 @@ Please fill in the "Status" field for each checklist item based on the chat hist
                             <div class="column-header">Covered</div>
                             ${createHTMLList(data.covered, '✅')}
                         </div>
-                        <div class="evaluation-column missed-column">
-                            <div class="column-header">Missed</div>
-                            ${createHTMLList(data.missed, '❌')}
-                        </div>
                         ${hasPartialData ? `
                         <div class="evaluation-column partial-column">
                             <div class="column-header">Partial</div>
                             ${createHTMLList(data.partial, '🔶')}
                         </div>
                         ` : ''}
+                        <div class="evaluation-column missed-column">
+                            <div class="column-header">Missed</div>
+                            ${createHTMLList(data.missed, '❌')}
+                        </div>
                     </div>
                 </div>
             `;
