@@ -3449,7 +3449,7 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         
         if (searchTerm === '') {
           // If search is empty, show everything and reset UI
-          this.resetSearchUI(allCaseItems, allTreeItems, noResultsElement);
+          this.clearSearchEffects(allCaseItems, noResultsElement);
           return;
         }
         
@@ -3536,6 +3536,37 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         }
       }
       
+      clearSearchEffects(caseItems, noResultsElement) {
+        // Show all case items and remove highlighting
+        caseItems.forEach(item => {
+          item.style.display = '';
+          const span = item.querySelector('span');
+          if (span) {
+            span.innerHTML = span.textContent;
+          }
+          // Remove any synonym indicators
+          const indicator = item.querySelector('small');
+          if (indicator) {
+            indicator.remove();
+          }
+        });
+        
+        // Show all tree items without affecting their open/closed state
+        this.element.querySelectorAll('.tree-item').forEach(item => {
+          item.style.display = '';
+        });
+        
+        // Reset tree item content display without forcing them closed
+        this.element.querySelectorAll('.tree-item-content').forEach(content => {
+          content.style.display = '';
+        });
+        
+        // Remove "no results" message if it exists
+        if (noResultsElement) {
+          noResultsElement.remove();
+        }
+      }
+      
       resetSearchUI(caseItems, treeItems, noResultsElement) {
         // Show all case items and remove highlighting
         caseItems.forEach(item => {
@@ -3551,15 +3582,23 @@ Please fill in the "Status" field for each checklist item based on the chat hist
           }
         });
         
-        // Show all tree items and reset their state
+        // Show all tree items but preserve their original state
         treeItems.forEach(item => {
           item.style.display = '';
-          item.classList.remove('open');
+          // Don't remove the 'open' class - let the tree maintain its state
+          // item.classList.remove('open'); // REMOVED THIS LINE
         });
         
-        // Hide all tree item contents
+        // Don't hide all tree item contents - only hide those that should be hidden
+        // based on the current tree state
+        // this.element.querySelectorAll('.tree-item-content').forEach(content => {
+        //   content.style.display = 'none';
+        // }); // REMOVED THIS BLOCK
+        
+        // Instead, only reset the display style for tree item contents
+        // and let the CSS handle the visibility based on the 'open' class
         this.element.querySelectorAll('.tree-item-content').forEach(content => {
-          content.style.display = 'none';
+          content.style.display = '';
         });
         
         // Remove "no results" message if it exists
@@ -3802,10 +3841,11 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         if (clearButton) {
           clearButton.style.display = 'none';
         }
-        // Reset search UI if tree view has data
-        if (treeView && treeView.data) {
-          treeView.handleSearchInput();
-        }
+        // Don't automatically reset search UI when closing modal
+        // This was causing topics to become empty when reopening
+        // if (treeView && treeView.data) {
+        //   treeView.handleSearchInput();
+        // }
       }
     }
 
