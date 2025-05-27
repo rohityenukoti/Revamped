@@ -342,17 +342,17 @@ async function handleSubmission(submissionData) {
             userResponses.responses[caseName].push({
                 timestamp: new Date().toISOString(),
                 dataGathering: {
-                    booleanArray: submissionData.responses.dataGathering.booleanArray,
+                    scoreArray: submissionData.responses.dataGathering.scoreArray,
                     score: submissionData.responses.dataGathering.score,
                     remarks: submissionData.responses.dataGathering.remarks || ""
                 },
                 management: {
-                    booleanArray: submissionData.responses.management.booleanArray,
+                    scoreArray: submissionData.responses.management.scoreArray,
                     score: submissionData.responses.management.score,
                     remarks: submissionData.responses.management.remarks || ""
                 },
                 interpersonalSkills: {
-                    booleanArray: submissionData.responses.interpersonalSkills.booleanArray,
+                    scoreArray: submissionData.responses.interpersonalSkills.scoreArray,
                     score: submissionData.responses.interpersonalSkills.score,
                     remarks: submissionData.responses.interpersonalSkills.remarks || ""
                 }
@@ -372,17 +372,17 @@ async function handleSubmission(submissionData) {
                     [caseName]: [{
                         timestamp: new Date().toISOString(),
                         dataGathering: {
-                            booleanArray: submissionData.responses.dataGathering.booleanArray,
+                            scoreArray: submissionData.responses.dataGathering.scoreArray,
                             score: submissionData.responses.dataGathering.score,
                             remarks: submissionData.responses.dataGathering.remarks || ""
                         },
                         management: {
-                            booleanArray: submissionData.responses.management.booleanArray,
+                            scoreArray: submissionData.responses.management.scoreArray,
                             score: submissionData.responses.management.score,
                             remarks: submissionData.responses.management.remarks || ""
                         },
                         interpersonalSkills: {
-                            booleanArray: submissionData.responses.interpersonalSkills.booleanArray,
+                            scoreArray: submissionData.responses.interpersonalSkills.scoreArray,
                             score: submissionData.responses.interpersonalSkills.score,
                             remarks: submissionData.responses.interpersonalSkills.remarks || ""
                         }

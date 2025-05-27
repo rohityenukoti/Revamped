@@ -144,19 +144,77 @@
             background-color: #f0f0f0;
         }
         
-        .checklist-item input[type="checkbox"] {
-            margin-right: 10px;
-            min-width: 18px;
-            height: 18px;
-            border: 2px solid #000;
-            border-radius: 0px;
-            position: relative;
-            top: 2px;
+        .checklist-item-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         
-        .checklist-item label {
-            flex: 1;
+        .checklist-item-text {
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .checklist-options {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .checklist-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
             cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 0px;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .checklist-option:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .checklist-option input[type="radio"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #000;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .checklist-option.covered {
+            color: #2d5016;
+        }
+        
+        .checklist-option.covered input[type="radio"]:checked {
+            background-color: #4CAF50;
+            border-color: #2d5016;
+        }
+        
+        .checklist-option.partial {
+            color: #8B4513;
+        }
+        
+        .checklist-option.partial input[type="radio"]:checked {
+            background-color: #FF9800;
+            border-color: #8B4513;
+        }
+        
+        .checklist-option.missed {
+            color: #8B0000;
+        }
+        
+        .checklist-option.missed input[type="radio"]:checked {
+            background-color: #F44336;
+            border-color: #8B0000;
+        }
+        
+        .checklist-option-label {
+            font-size: 0.9em;
+            font-weight: 500;
         }
         
         .remarks-container {
@@ -262,6 +320,20 @@
             
             .video-container {
                 height: 300px;
+            }
+            
+            .checklist-options {
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            
+            .checklist-option {
+                padding: 6px 10px;
+                font-size: 0.9em;
+            }
+            
+            .checklist-option-label {
+                font-size: 0.8em;
             }
         }
         
@@ -919,17 +991,17 @@
             state.checklist = {
                 dataGathering: {
                     points: data.dataGathering || [],
-                    booleanArray: new Array((data.dataGathering || []).length).fill(false),
+                    scoreArray: new Array((data.dataGathering || []).length).fill(0), // 0=missed, 0.5=partial, 1=covered
                     remarks: data.dataGatheringRemarks || ""
                 },
                 management: {
                     points: data.management || [],
-                    booleanArray: new Array((data.management || []).length).fill(false),
+                    scoreArray: new Array((data.management || []).length).fill(0), // 0=missed, 0.5=partial, 1=covered
                     remarks: data.managementRemarks || ""
                 },
                 interpersonalSkills: {
                     points: data.interpersonalSkills || [],
-                    booleanArray: new Array((data.interpersonalSkills || []).length).fill(false),
+                    scoreArray: new Array((data.interpersonalSkills || []).length).fill(0), // 0=missed, 0.5=partial, 1=covered
                     remarks: data.interpersonalSkillsRemarks || ""
                 }
             };
@@ -957,25 +1029,64 @@
                 const checklistItem = document.createElement('div');
                 checklistItem.className = 'checklist-item';
                 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `${domain}-${index}`;
-                checkbox.addEventListener('change', (e) => {
-                    //console.log(`Checkbox changed in ${domain} at index ${index}. New value:`, e.target.checked);
-                    // Update state when checkbox is changed
-                    state.checklist[domain].booleanArray[index] = e.target.checked;
-                    //console.log(`Updated boolean array for ${domain}:`, state.checklist[domain].booleanArray);
+                const itemContent = document.createElement('div');
+                itemContent.className = 'checklist-item-content';
+                
+                const itemText = document.createElement('div');
+                itemText.className = 'checklist-item-text';
+                itemText.textContent = item;
+                
+                const optionsContainer = document.createElement('div');
+                optionsContainer.className = 'checklist-options';
+                
+                // Create radio button options
+                const options = [
+                    { value: 1, label: 'Covered', class: 'covered' },
+                    { value: 0.5, label: 'Partial', class: 'partial' },
+                    { value: 0, label: 'Missed', class: 'missed' }
+                ];
+                
+                options.forEach(option => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = `checklist-option ${option.class}`;
                     
-                    // Calculate and update scores immediately
-                    updateScores();
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = `${domain}-${index}`;
+                    radio.value = option.value;
+                    radio.id = `${domain}-${index}-${option.value}`;
+                    
+                    // Set default to "Missed" (value 0)
+                    if (option.value === 0) {
+                        radio.checked = true;
+                    }
+                    
+                    radio.addEventListener('change', (e) => {
+                        if (e.target.checked) {
+                            const newValue = parseFloat(e.target.value);
+                            //console.log(`Radio changed in ${domain} at index ${index}. New value:`, newValue);
+                            // Update state when radio is changed
+                            state.checklist[domain].scoreArray[index] = newValue;
+                            //console.log(`Updated score array for ${domain}:`, state.checklist[domain].scoreArray);
+                            
+                            // Calculate and update scores immediately
+                            updateScores();
+                        }
+                    });
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `${domain}-${index}-${option.value}`;
+                    label.className = 'checklist-option-label';
+                    label.textContent = option.label;
+                    
+                    optionDiv.appendChild(radio);
+                    optionDiv.appendChild(label);
+                    optionsContainer.appendChild(optionDiv);
                 });
                 
-                const label = document.createElement('label');
-                label.htmlFor = `${domain}-${index}`;
-                label.textContent = item;
-                
-                checklistItem.appendChild(checkbox);
-                checklistItem.appendChild(label);
+                itemContent.appendChild(itemText);
+                itemContent.appendChild(optionsContainer);
+                checklistItem.appendChild(itemContent);
                 container.appendChild(checklistItem);
             });
         }
@@ -983,9 +1094,9 @@
         // Function to update scores in the UI
         function updateScores() {
             //console.log("Updating scores...");
-            const dataGatheringScore = calculateScore(state.checklist.dataGathering.booleanArray);
-            const managementScore = calculateScore(state.checklist.management.booleanArray);
-            const interpersonalSkillsScore = calculateScore(state.checklist.interpersonalSkills.booleanArray);
+            const dataGatheringScore = calculateScore(state.checklist.dataGathering.scoreArray);
+            const managementScore = calculateScore(state.checklist.management.scoreArray);
+            const interpersonalSkillsScore = calculateScore(state.checklist.interpersonalSkills.scoreArray);
             
             //console.log("Calculated scores: " + 
             //    JSON.stringify({
@@ -1007,25 +1118,31 @@
         }
         
         // Function to calculate the score for a domain (scaled to max of 4)
-        function calculateScore(booleanArray) {
-            if (!booleanArray || booleanArray.length === 0) {
-                //console.log("Invalid boolean array for score calculation:", booleanArray);
-                return "0";
+        function calculateScore(scoreArray) {
+            if (!scoreArray || scoreArray.length === 0) {
+                //console.log("Invalid score array for score calculation:", scoreArray);
+                return "0.00";
             }
             
-            // Count the number of true values
-            const trueCount = booleanArray.filter(Boolean).length;
-            //console.log("True count:", trueCount, "out of", booleanArray.length, "items");
+            // Calculate total points - now the values are already the points
+            // 0 = missed (0 points), 0.5 = partial (0.5 points), 1 = covered (1 point)
+            let totalPoints = 0;
+            scoreArray.forEach(score => {
+                totalPoints += score; // Direct addition since values are already the points
+            });
             
-            // Calculate raw score as percentage of items checked
-            const rawScore = trueCount / booleanArray.length;
+            //console.log("Total points:", totalPoints, "out of", scoreArray.length, "items");
             
-            // Scale to max of 4 and round to nearest integer
-            const scaledScore = Math.round(rawScore * 4);
+            // Calculate raw score as percentage of total possible points
+            const maxPossiblePoints = scoreArray.length; // Each item can get max 1 point
+            const rawScore = totalPoints / maxPossiblePoints;
+            
+            // Scale to max of 4
+            const scaledScore = rawScore * 4;
             //console.log("Raw score:", rawScore, "Scaled score:", scaledScore);
             
-            // Return the score as a string
-            return scaledScore.toString();
+            // Return the score as a string with 2 decimal places
+            return scaledScore.toFixed(2);
         }
         
         // Function to initialize Jitsi
@@ -1236,22 +1353,22 @@
                 return;
             }
             
-            // Validate that something is checked
-            const totalChecked = state.checklist.dataGathering.booleanArray.filter(Boolean).length +
-                               state.checklist.management.booleanArray.filter(Boolean).length +
-                               state.checklist.interpersonalSkills.booleanArray.filter(Boolean).length;
+            // Validate that at least some items are not "Missed" (value 0)
+            const totalNonMissed = state.checklist.dataGathering.scoreArray.filter(score => score > 0).length +
+                                 state.checklist.management.scoreArray.filter(score => score > 0).length +
+                                 state.checklist.interpersonalSkills.scoreArray.filter(score => score > 0).length;
             
-            // console.log("Total items checked:", totalChecked);
+            // console.log("Total items not missed:", totalNonMissed);
             
-            if (totalChecked === 0) {
-                showError("Please check at least one item before submitting.");
+            if (totalNonMissed === 0) {
+                showError("Please mark at least one item as Covered or Partial before submitting.");
                 return;
             }
             
             // Calculate scores for each domain
-            const dataGatheringScore = calculateScore(state.checklist.dataGathering.booleanArray);
-            const managementScore = calculateScore(state.checklist.management.booleanArray);
-            const interpersonalSkillsScore = calculateScore(state.checklist.interpersonalSkills.booleanArray);
+            const dataGatheringScore = calculateScore(state.checklist.dataGathering.scoreArray);
+            const managementScore = calculateScore(state.checklist.management.scoreArray);
+            const interpersonalSkillsScore = calculateScore(state.checklist.interpersonalSkills.scoreArray);
             
             // Update score display
             document.getElementById('dataGatheringScore').textContent = dataGatheringScore;
@@ -1471,17 +1588,17 @@
                 timestamp: new Date().toISOString(),
                 responses: {
                     dataGathering: {
-                        booleanArray: state.checklist.dataGathering.booleanArray,
+                        scoreArray: state.checklist.dataGathering.scoreArray,
                         score: state.scores.dataGathering,
                         remarks: state.checklist.dataGathering.remarks
                     },
                     management: {
-                        booleanArray: state.checklist.management.booleanArray,
+                        scoreArray: state.checklist.management.scoreArray,
                         score: state.scores.management,
                         remarks: state.checklist.management.remarks
                     },
                     interpersonalSkills: {
-                        booleanArray: state.checklist.interpersonalSkills.booleanArray,
+                        scoreArray: state.checklist.interpersonalSkills.scoreArray,
                         score: state.scores.interpersonalSkills,
                         remarks: state.checklist.interpersonalSkills.remarks
                     }
