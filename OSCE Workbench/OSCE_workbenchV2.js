@@ -555,13 +555,13 @@ function loadTimestamps(caseName) {
         // Calculate total score
         const totalScore = dgScore + mgScore + isScore;
         
-        // Format individual domain scores
-        const dg = dgScore ? `DG: ${dgScore}` : '';
-        const mg = mgScore ? `MG: ${mgScore}` : '';
-        const is = isScore ? `IS: ${isScore}` : '';
+        // Format individual domain scores - show all scores including 0
+        const dg = dgScore !== undefined && dgScore !== null ? `DG: ${dgScore}` : '';
+        const mg = mgScore !== undefined && mgScore !== null ? `MG: ${mgScore}` : '';
+        const is = isScore !== undefined && isScore !== null ? `IS: ${isScore}` : '';
         
-        // Combine scores with timestamp and total
-        const formattedScores = [dg, mg, is].filter(Boolean).join(', ');
+        // Combine scores with timestamp and total - only filter out truly empty strings
+        const formattedScores = [dg, mg, is].filter(score => score !== '').join(', ');
         const scoreDisplay = formattedScores ? ` (Total: ${totalScore}, ${formattedScores})` : '';
         
         // Format date in the requested format: "04 May 2025, 4:30 AM"

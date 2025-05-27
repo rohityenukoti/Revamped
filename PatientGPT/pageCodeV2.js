@@ -550,10 +550,41 @@ function loadTimestamps(caseName) {
         return;
     }
     const caseResponses = userResponsesData[caseName];
-    const options = caseResponses.map((response, index) => ({
-        label: `${response.AI ? '🤖' : '👤'} ${new Date(response.timestamp).toLocaleString()}`,
-        value: index.toString()
-    }));
+    const options = caseResponses.map((response, index) => {
+        // Format scores for display - round to integers
+        const dgScore = response.dataGathering?.score ? Math.round(parseFloat(response.dataGathering.score)) : 0;
+        const mgScore = response.management?.score ? Math.round(parseFloat(response.management.score)) : 0;
+        const isScore = response.interpersonalSkills?.score ? Math.round(parseFloat(response.interpersonalSkills.score)) : 0;
+        
+        // Calculate total score
+        const totalScore = dgScore + mgScore + isScore;
+        
+        // Format individual domain scores - show all scores including 0
+        const dg = dgScore !== undefined && dgScore !== null ? `DG: ${dgScore}` : '';
+        const mg = mgScore !== undefined && mgScore !== null ? `MG: ${mgScore}` : '';
+        const is = isScore !== undefined && isScore !== null ? `IS: ${isScore}` : '';
+        
+        // Combine scores with timestamp and total - only filter out truly empty strings
+        const formattedScores = [dg, mg, is].filter(score => score !== '').join(', ');
+        const scoreDisplay = formattedScores ? ` (Total: ${totalScore}, ${formattedScores})` : '';
+        
+        // Format date in the requested format: "04 May 2025, 4:30 AM"
+        const date = new Date(response.timestamp);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = date.toLocaleString('en-US', { month: 'short' });
+        const year = date.getFullYear();
+        const hours = date.getHours();
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const formattedHours = hours % 12 || 12; // Convert 24h to 12h format
+        
+        const formattedDate = `${day} ${month} ${year}, ${formattedHours}:${minutes} ${ampm}`;
+        
+        return {
+            label: `${response.AI ? '🤖' : '👤'} ${formattedDate}${scoreDisplay}`,
+            value: index.toString()
+        };
+    });
     $combinedWidget.postMessage({ type: 'updateTimestamps', caseName, options });
     if (caseResponses.length > 0) {
         const lastIndex = (caseResponses.length - 1).toString();
