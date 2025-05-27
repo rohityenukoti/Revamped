@@ -301,13 +301,17 @@ async function fetchTreeStructure() {
 
         const treeStructure = {};
         results.items.forEach(item => {
-            const { topic, category, subCategory, caseName, caseUID } = item;
+            const { topic, category, subCategory, caseName, caseUID, synonyms } = item;
 
             if (isRedundantStructure(topic, category, subCategory)) {
                 if (!treeStructure[topic]) {
                     treeStructure[topic] = [];
                 }
-                treeStructure[topic].push({ caseName, caseUID });
+                treeStructure[topic].push({ 
+                    caseName, 
+                    caseUID, 
+                    synonyms: synonyms || [] 
+                });
             } else if (category === subCategory) {
                 if (!treeStructure[topic]) {
                     treeStructure[topic] = {};
@@ -315,7 +319,11 @@ async function fetchTreeStructure() {
                 if (!treeStructure[topic][category]) {
                     treeStructure[topic][category] = [];
                 }
-                treeStructure[topic][category].push({ caseName, caseUID });
+                treeStructure[topic][category].push({ 
+                    caseName, 
+                    caseUID, 
+                    synonyms: synonyms || [] 
+                });
             } else {
                 if (!treeStructure[topic]) {
                     treeStructure[topic] = {};
@@ -326,7 +334,11 @@ async function fetchTreeStructure() {
                 if (!treeStructure[topic][category][subCategory]) {
                     treeStructure[topic][category][subCategory] = [];
                 }
-                treeStructure[topic][category][subCategory].push({ caseName, caseUID });
+                treeStructure[topic][category][subCategory].push({ 
+                    caseName, 
+                    caseUID, 
+                    synonyms: synonyms || [] 
+                });
             }
         });
 
@@ -491,7 +503,8 @@ function transformTopicDataForTreeView(topic, topicData) {
             name: camelCaseToSentence(caseItem.caseName),
             type: 'caseName',
             hasResponse: hasCaseResponse(caseItem.caseName),
-            caseUID: caseItem.caseUID
+            caseUID: caseItem.caseUID,
+            synonyms: caseItem.synonyms || []
         }));
     }
 
@@ -506,7 +519,8 @@ function transformTopicDataForTreeView(topic, topicData) {
                     name: camelCaseToSentence(caseItem.caseName),
                     type: 'caseName',
                     hasResponse: hasCaseResponse(caseItem.caseName),
-                    caseUID: caseItem.caseUID
+                    caseUID: caseItem.caseUID,
+                    synonyms: caseItem.synonyms || []
                 }))
             });
         } else {
@@ -527,7 +541,8 @@ function transformTopicDataForTreeView(topic, topicData) {
                         name: camelCaseToSentence(caseItem.caseName),
                         type: 'caseName',
                         hasResponse: hasCaseResponse(caseItem.caseName),
-                        caseUID: caseItem.caseUID
+                        caseUID: caseItem.caseUID,
+                        synonyms: caseItem.synonyms || []
                     }))
                 };
                 categoryItem.children.push(subCategoryItem);

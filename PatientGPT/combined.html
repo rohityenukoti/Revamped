@@ -1838,6 +1838,117 @@
         min-width: 60px;
         min-height: 20px;
     }
+
+    /* Add these styles for the search feature in tree view */
+    .search-container {
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 1.1em;
+        border: 4px solid #000;
+        box-shadow: 4px 4px 0 #000;
+        transition: transform 0.2s, box-shadow 0.2s;
+        padding-right: 80px; /* Make room for both icons */
+        background: #fff;
+        box-sizing: border-box; /* Add this to include padding and border in width calculation */
+    }
+
+    .search-input:focus {
+        outline: none;
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0 #000;
+    }
+
+    .search-icon {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5em;
+        pointer-events: none;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 50px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5em;
+        cursor: pointer;
+        opacity: 0.7;
+        display: none; /* Hide initially */
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        box-shadow: none;
+    }
+
+    .clear-search:hover {
+        opacity: 1;
+        background: none;
+        transform: translateY(-50%);
+        box-shadow: none;
+    }
+
+    .clear-search:active {
+        transform: translateY(-50%);
+        box-shadow: none;
+    }
+
+    .no-results {
+        padding: 20px;
+        text-align: center;
+        background-color: #f0f0f0;
+        border: 3px solid #000;
+        box-shadow: 4px 4px 0 #000;
+        margin-top: 20px;
+        font-weight: bold;
+    }
+
+    .highlight {
+        background-color: #ffde59;
+        padding: 0 2px;
+        font-weight: bold;
+    }
+
+    /* Mobile responsive search styles */
+    @media (max-width: 768px) {
+        .search-input {
+            padding: 8px 15px;
+            font-size: 0.9em;
+            padding-right: 70px; /* Adjusted for mobile */
+        }
+        
+        .search-icon {
+            right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .clear-search {
+            right: 40px;
+            font-size: 1.2em;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .search-input {
+            padding: 6px 12px;
+            font-size: 0.8em;
+            padding-right: 60px; /* Adjusted for smaller screens */
+        }
+        
+        .clear-search {
+            right: 35px;
+            font-size: 1em;
+        }
+    }
+
+    /* Score display styles */
   </style>
 
   <!-- External Scripts -->
@@ -2104,6 +2215,14 @@
   <!-- Tree View Section -->
   <div id="treeViewContainer">
     <h2>Select a Case</h2>
+    
+    <!-- Add search container here -->
+    <div class="search-container">
+        <input type="text" class="search-input" id="caseSearchInput" placeholder="Search for cases by name...">
+        <button class="clear-search" id="clearSearch">✖</button>
+        <span class="search-icon">🔍</span>
+    </div>
+    
     <div id="treeView" class="tree-view"></div>
     <button id="closeCaseSelection" class="timer-button" style="margin-top: 1em;">Close</button>
   </div>
@@ -3291,11 +3410,190 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         this.mode = mode;
         this.render();
       }
+      
+      // Add search functionality methods
+      initializeSearch() {
+        const searchInput = document.getElementById('caseSearchInput');
+        const clearButton = document.getElementById('clearSearch');
+        if (!searchInput || !clearButton) return;
+        
+        searchInput.addEventListener('input', () => {
+          this.handleSearchInput();
+          // Show/hide clear button based on input
+          clearButton.style.display = searchInput.value.trim() ? 'block' : 'none';
+        });
+        
+        clearButton.addEventListener('click', () => {
+          searchInput.value = '';
+          this.handleSearchInput();
+          clearButton.style.display = 'none';
+          searchInput.focus();
+        });
+      }
+      
+      handleSearchInput() {
+        const searchInput = document.getElementById('caseSearchInput');
+        if (!searchInput) return;
+        
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        
+        if (!this.data) {
+          console.error("Tree view data not initialized");
+          return;
+        }
+        
+        // Get all case items and tree items
+        const allCaseItems = this.element.querySelectorAll('.case-item');
+        const allTreeItems = this.element.querySelectorAll('.tree-item');
+        const noResultsElement = document.getElementById('noSearchResults');
+        
+        if (searchTerm === '') {
+          // If search is empty, show everything and reset UI
+          this.resetSearchUI(allCaseItems, allTreeItems, noResultsElement);
+          return;
+        }
+        
+        // Hide all tree items initially
+        allTreeItems.forEach(item => {
+          item.style.display = 'none';
+        });
+        
+        // Filter and highlight matching cases
+        let resultsFound = false;
+        
+        allCaseItems.forEach(item => {
+          const caseName = item.textContent.toLowerCase();
+          const caseId = item.dataset.id;
+          
+          // Find the corresponding case data in the tree structure
+          const caseData = this.findCaseDataById(caseId);
+          
+          // Check if the case name matches the search term
+          const nameMatches = caseName.includes(searchTerm);
+          
+          // Check if any synonyms match the search term
+          const hasSynonyms = caseData && caseData.synonyms && Array.isArray(caseData.synonyms);
+          const synonymMatches = hasSynonyms ? 
+            caseData.synonyms.some(syn => syn.toLowerCase().includes(searchTerm)) : 
+            false;
+          
+          if (nameMatches || synonymMatches) {
+            // Show this case
+            item.style.display = '';
+            resultsFound = true;
+            
+            // Highlight the matching text in the case name if it matches
+            if (nameMatches) {
+              const regex = new RegExp(`(${searchTerm})`, 'gi');
+              const originalText = item.querySelector('span').textContent;
+              item.querySelector('span').innerHTML = originalText.replace(regex, '<span class="highlight">$1</span>');
+            }
+            
+            // Show all parent containers
+            let parent = item.parentElement;
+            while (parent && !parent.classList.contains('tree-view')) {
+              if (parent.classList.contains('tree-item-content')) {
+                parent.style.display = 'block';
+              }
+              if (parent.classList.contains('tree-item')) {
+                parent.style.display = '';
+                parent.classList.add('open');
+              }
+              parent = parent.parentElement;
+            }
+            
+            // Add synonym indicator if matched by synonym and not by name
+            if (synonymMatches && !nameMatches && hasSynonyms) {
+              // Find the matching synonyms to display
+              const matchingSynonyms = caseData.synonyms
+                .filter(syn => syn.toLowerCase().includes(searchTerm))
+                .join(', ');
+              
+              // Add a small indicator that this was matched by synonym
+              const indicator = document.createElement('small');
+              indicator.style.marginLeft = '5px';
+              indicator.style.opacity = '0.7';
+              indicator.innerHTML = ` (matched: ${matchingSynonyms})`;
+              item.appendChild(indicator);
+            }
+          } else {
+            // Hide this case
+            item.style.display = 'none';
+          }
+        });
+        
+        // Show "no results" message if needed
+        if (!resultsFound) {
+          if (!noResultsElement) {
+            const message = document.createElement('div');
+            message.id = 'noSearchResults';
+            message.className = 'no-results';
+            message.innerHTML = `No cases found matching "<strong>${searchTerm}</strong>"`;
+            this.element.appendChild(message);
+          }
+        } else if (noResultsElement) {
+          noResultsElement.remove();
+        }
+      }
+      
+      resetSearchUI(caseItems, treeItems, noResultsElement) {
+        // Show all case items and remove highlighting
+        caseItems.forEach(item => {
+          item.style.display = '';
+          const span = item.querySelector('span');
+          if (span) {
+            span.innerHTML = span.textContent;
+          }
+          // Remove any synonym indicators
+          const indicator = item.querySelector('small');
+          if (indicator) {
+            indicator.remove();
+          }
+        });
+        
+        // Show all tree items and reset their state
+        treeItems.forEach(item => {
+          item.style.display = '';
+          item.classList.remove('open');
+        });
+        
+        // Hide all tree item contents
+        this.element.querySelectorAll('.tree-item-content').forEach(content => {
+          content.style.display = 'none';
+        });
+        
+        // Remove "no results" message if it exists
+        if (noResultsElement) {
+          noResultsElement.remove();
+        }
+      }
+      
+      // Helper method to find case data by ID
+      findCaseDataById(caseId) {
+        const findInItems = (items) => {
+          if (!items) return null;
+          
+          for (let item of items) {
+            if (item.id === caseId) {
+              return item;
+            }
+            if (item.children) {
+              const found = findInItems(item.children);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        
+        return findInItems(this.data);
+      }
     }
     const treeView = new TreeView(document.getElementById('treeView'));
     window.addEventListener('message', (event) => {
       if (event.data.type === 'setData') {
         treeView.setData(event.data.data);
+        // Initialize search after data is set
+        treeView.initializeSearch();
       } else if (event.data.type === 'updateTopic') {
         treeView.updateTopic(event.data.topic, event.data.data);
       } else if (event.data.type === 'highlightCase') {
@@ -3487,11 +3785,28 @@ Please fill in the "Status" field for each checklist item based on the chat hist
     function showCaseSelectionModal() {
       document.getElementById('treeViewContainer').style.display = 'block';
       document.getElementById('modalOverlay').style.display = 'block';
+      // Initialize search when modal is opened
+      if (treeView && treeView.data) {
+        treeView.initializeSearch();
+      }
     }
 
     function hideCaseSelectionModal() {
       document.getElementById('treeViewContainer').style.display = 'none';
       document.getElementById('modalOverlay').style.display = 'none';
+      // Clear search when modal is closed
+      const searchInput = document.getElementById('caseSearchInput');
+      const clearButton = document.getElementById('clearSearch');
+      if (searchInput) {
+        searchInput.value = '';
+        if (clearButton) {
+          clearButton.style.display = 'none';
+        }
+        // Reset search UI if tree view has data
+        if (treeView && treeView.data) {
+          treeView.handleSearchInput();
+        }
+      }
     }
 
     // Modify the event listeners
