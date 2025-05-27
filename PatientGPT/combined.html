@@ -3551,12 +3551,13 @@ Please fill in the "Status" field for each checklist item based on the chat hist
           }
         });
         
-        // Show all tree items without affecting their open/closed state
+        // Show all tree items and close them to return to original state
         this.element.querySelectorAll('.tree-item').forEach(item => {
           item.style.display = '';
+          item.classList.remove('open'); // Close all opened items
         });
         
-        // Reset tree item content display without forcing them closed
+        // Hide all tree item contents to return to collapsed state
         this.element.querySelectorAll('.tree-item-content').forEach(content => {
           content.style.display = '';
         });
