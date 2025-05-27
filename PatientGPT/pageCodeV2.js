@@ -926,7 +926,7 @@ async function saveSessionFeedback(feedback) {
             await wixData.insert("userResponses", record);
         }
         
-        console.log("Session feedback saved successfully");
+        //console.log("Session feedback saved successfully");
     } catch (error) {
         console.error("Error saving session feedback:", error);
     }
