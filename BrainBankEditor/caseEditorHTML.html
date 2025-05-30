@@ -307,6 +307,17 @@
             margin: 0 5px;
             vertical-align: middle;
         }
+        
+        /* Link Styles in Rich Text Editor */
+        .rich-editable a {
+            color: #007bff;
+            text-decoration: underline;
+        }
+        
+        .rich-editable a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -538,6 +549,13 @@
         </button>
         <button class="toolbar-button" data-command="outdent" title="Decrease Indent">
             <i class="fas fa-outdent">←</i>
+        </button>
+        <span class="toolbar-separator"></span>
+        <button class="toolbar-button" data-command="createLink" title="Insert Link">
+            <i class="fas fa-link">🔗</i>
+        </button>
+        <button class="toolbar-button" data-command="unlink" title="Remove Link">
+            <i class="fas fa-unlink">🔗✗</i>
         </button>
     </div>
     
@@ -1337,7 +1355,16 @@
         }
 
         function formatDoc(command, value = null) {
-            document.execCommand(command, false, value);
+            if (command === 'createLink') {
+                const url = prompt('Enter the URL:', 'https://');
+                if (url && url !== 'https://') {
+                    document.execCommand('createLink', false, url);
+                }
+            } else if (command === 'unlink') {
+                document.execCommand('unlink', false, null);
+            } else {
+                document.execCommand(command, false, value);
+            }
         }
 
         // Initialize the editor
