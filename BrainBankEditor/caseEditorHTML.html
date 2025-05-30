@@ -557,6 +557,10 @@
         <button class="toolbar-button" data-command="unlink" title="Remove Link">
             <i class="fas fa-unlink">🔗✗</i>
         </button>
+        <span class="toolbar-separator"></span>
+        <button class="toolbar-button" data-command="insertTable" title="Insert Table">
+            <i class="fas fa-table">📋</i>
+        </button>
     </div>
     
     <script>
@@ -1362,8 +1366,45 @@
                 }
             } else if (command === 'unlink') {
                 document.execCommand('unlink', false, null);
+            } else if (command === 'insertTable') {
+                insertTable();
             } else {
                 document.execCommand(command, false, value);
+            }
+        }
+
+        function insertTable() {
+            // Prompt for table dimensions
+            const rows = prompt('Number of rows:', '3');
+            const cols = prompt('Number of columns:', '3');
+            
+            if (rows && cols && parseInt(rows) > 0 && parseInt(cols) > 0) {
+                const numRows = parseInt(rows);
+                const numCols = parseInt(cols);
+                
+                // Create table HTML
+                let tableHTML = '<table style="border-collapse: collapse; width: 100%; margin: 10px 0;">';
+                
+                // Create header row
+                tableHTML += '<thead><tr>';
+                for (let j = 0; j < numCols; j++) {
+                    tableHTML += `<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2; font-weight: bold;">Header ${j + 1}</th>`;
+                }
+                tableHTML += '</tr></thead>';
+                
+                // Create body rows
+                tableHTML += '<tbody>';
+                for (let i = 0; i < numRows - 1; i++) { // -1 because we already have a header row
+                    tableHTML += '<tr>';
+                    for (let j = 0; j < numCols; j++) {
+                        tableHTML += '<td style="border: 1px solid #ddd; padding: 8px;">&nbsp;</td>';
+                    }
+                    tableHTML += '</tr>';
+                }
+                tableHTML += '</tbody></table>';
+                
+                // Insert the table at cursor position
+                document.execCommand('insertHTML', false, tableHTML);
             }
         }
 
