@@ -83,6 +83,35 @@
         min-width: 200px; /* Add minimum width */
         white-space: nowrap; /* Prevent text wrapping */
     }
+
+    /* Access Denied Notification */
+    #accessDeniedNotification {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10000;
+        background-color: #ff4d4d;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: bold;
+        font-size: 16px;
+        border-bottom: 4px solid #000;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
     
     /* Timer active animation */
     @keyframes timer-pulse {
@@ -1960,6 +1989,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Space+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Access Denied Notification -->
+  <div id="accessDeniedNotification">
+    <span id="accessDeniedMessage">You don't have access to this case. Redirecting to pricing plans...</span>
+  </div>
+
   <!-- New Top Bar Section with Timer and Case Selection Button -->
   <div id="topBar">
     <!-- Left side: hamburger menu (mobile) and BrainBank button -->
@@ -2334,6 +2368,8 @@
         treeView.setItemLoading(event.data.caseId, event.data.isLoading);
       } else if (data.type === 'showPerformance') {
         showPerformanceLightbox(data.autoSelectLatest);
+      } else if (data.type === 'showAccessDeniedMessage') {
+        showAccessDeniedNotification(data.message);
       }
     }, false);
 
@@ -4538,6 +4574,26 @@ Please fill in the "Status" field for each checklist item based on the chat hist
     setInterval(updateNetworkMeter, 5000);
     // Initial update
     updateNetworkMeter();
+
+    // Function to show access denied notification
+    function showAccessDeniedNotification(message) {
+        const notification = document.getElementById('accessDeniedNotification');
+        const messageElement = document.getElementById('accessDeniedMessage');
+        
+        // Update message if provided
+        if (message) {
+            messageElement.textContent = message;
+        }
+        
+        // Show the notification
+        notification.style.display = 'block';
+        
+        // Auto-hide after 3 seconds (slightly longer than the redirect delay)
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+
   </script>
 </body>
 </html> 

@@ -68,12 +68,16 @@ $w.onReady(async function () {
 
         // Handle case-specific loading if needed
         if (selections.caseName) {
-            loadCaseData(selections.caseName);
-            // Run these in parallel since they're independent
-            Promise.all([
-                fetchChecklistForCurrentCase(),
-                loadTimestamps(selections.caseName)
-            ]);
+            // Check access before loading case data during initialization
+            const hasAccess = await checkCaseAccessAndRedirect(selections.caseName);
+            if (hasAccess) {
+                loadCaseData(selections.caseName);
+                // Run these in parallel since they're independent
+                Promise.all([
+                    fetchChecklistForCurrentCase(),
+                    loadTimestamps(selections.caseName)
+                ]);
+            }
         } else {
             showCaseSelectionLightbox();
         }
@@ -254,6 +258,20 @@ async function loadCaseData(caseName) {
                 }
             } else {
                 console.error("User does not have access to this case:", caseName);
+                
+                // Show user-friendly message before redirect
+                $combinedWidget.postMessage({ 
+                    type: 'showAccessDeniedMessage', 
+                    caseName: caseName,
+                    message: `You don't have access to this case. Redirecting to pricing plans...`
+                });
+                
+                // Add a small delay to let user see the message before redirecting
+                setTimeout(() => {
+                    wixLocationFrontend.to('/plans-pricing');
+                }, 2000); // 2 second delay
+                
+                return;
             }
         } else {
             console.error("Case not found:", caseName);
@@ -418,6 +436,12 @@ async function handleCaseSelection(selectedId) {
             const caseName = selectedId.split(':')[1];
             selections.caseName = caseName;
             
+            // Check access before setting loading state
+            const hasAccess = await checkCaseAccessAndRedirect(caseName);
+            if (!hasAccess) {
+                return; // Access check will handle the redirect
+            }
+            
             // Set loading state
             $combinedWidget.postMessage({ 
                 type: 'setLoading', 
@@ -475,13 +499,59 @@ async function handleCaseSelection(selectedId) {
     }
 }
 
+// Helper function to check if user has access to a case and redirect if not
+async function checkCaseAccessAndRedirect(caseName) {
+    try {
+        const userPlan = await getCurrentUserPlan();
+        const allowedTopics = getAllowedTopics(userPlan);
+        
+        const results = await wixData.query("BrainBank")
+            .eq("caseName", caseName)
+            .include("topic")
+            .find();
+        
+        if (results.items.length > 0) {
+            const caseData = results.items[0];
+            if (!allowedTopics.includes(caseData.topic)) {
+                console.error("User does not have access to this case:", caseName);
+                
+                // Show user-friendly message before redirect
+                $combinedWidget.postMessage({ 
+                    type: 'showAccessDeniedMessage', 
+                    caseName: caseName,
+                    message: `You don't have access to this case. Redirecting to pricing plans...`
+                });
+                
+                // Add a small delay to let user see the message before redirecting
+                setTimeout(() => {
+                    wixLocationFrontend.to('/plans-pricing');
+                }, 2000); // 2 second delay
+                
+                return false;
+            }
+            return true;
+        } else {
+            console.error("Case not found:", caseName);
+            return false;
+        }
+    } catch (error) {
+        console.error("Error checking case access:", error);
+        return false;
+    }
+}
+
 function handleUrlParameters() {
     const caseName = wixLocationFrontend.query["case"];
     if (caseName) {
         selections.caseName = caseName;
-        // First load the case data which will trigger patient info update
-        loadCaseData(caseName)
-            .then(() => fetchChecklistForCurrentCase());
+        // Check access before loading case data
+        checkCaseAccessAndRedirect(caseName).then((hasAccess) => {
+            if (hasAccess) {
+                // First load the case data which will trigger patient info update
+                loadCaseData(caseName)
+                    .then(() => fetchChecklistForCurrentCase());
+            }
+        });
     } else {
         $combinedWidget.postMessage({ 
             type: 'highlightCase', 
