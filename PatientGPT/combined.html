@@ -1978,6 +1978,47 @@
     }
 
     /* Score display styles */
+    .get-evaluation-button {
+        font-size: 1.4em;
+        padding: 1em 2em;
+        margin: 1.5em auto;
+        display: block;
+        background-color: #4c84ff;
+        border: 4px solid #000;
+        box-shadow: 8px 8px 0 #000;
+        color: white;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: bold;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 0.1s, box-shadow 0.1s;
+        min-width: 250px;
+        border-radius: 8px;
+    }
+
+    .get-evaluation-button:hover {
+        background-color: #6b9aff;
+        transform: translate(-2px, -2px);
+        box-shadow: 10px 10px 0 #000;
+    }
+
+    .get-evaluation-button:active {
+        transform: translate(8px, 8px);
+        box-shadow: 0 0 0 #000;
+    }
+
+    /* Mobile specific styling for get evaluation button */
+    @media (max-width: 768px) {
+        .get-evaluation-button {
+            font-size: 4em;
+            padding: 0.3em 0.6em;
+            margin: 6em auto 2em auto;
+            min-width: 280px;
+            width: 90%;
+            max-width: 350px;
+            height: auto;
+        }
+    }
   </style>
 
   <!-- External Scripts -->
@@ -2152,8 +2193,8 @@
                 
                 <!-- Add the evaluation button container here -->
                 <div id="evaluationButtonContainer" style="display: none;">
-                    <button id="getEvaluationButton" onclick="getEvaluationFromAI()">
-                        Get Evaluation from AI
+                    <button id="getEvaluationButton" class="get-evaluation-button" onclick="getEvaluationFromAI()">
+                        🤖 Get AI Evaluation
                     </button>
                 </div>
                 
