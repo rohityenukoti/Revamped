@@ -910,35 +910,6 @@
             box-shadow: 12px 12px 0 black;
         }
 
-        .practice-options {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .practice-option-btn {
-            padding: 15px 30px;
-            font-size: 1.1em;
-            background-color: white;
-            border: 3px solid black;
-            border-radius: 0;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 6px 6px 0 black;
-            transition: transform 0.2s, box-shadow 0.2s;
-            min-width: 250px;
-        }
-
-        .practice-option-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 8px 8px 0 black;
-        }
-
-        .practice-option-btn.back-btn {
-            background-color: #f0f0f0;
-        }
-
         .emoji {
             font-size: 1.2em;
             margin-right: 10px;
@@ -956,29 +927,15 @@
                 min-width: auto;
                 width: 100%;
             }
-
-            .practice-options {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .practice-option-btn {
-                padding: 12px 24px;
-                font-size: 1em;
-                min-width: auto;
-                width: 100%;
-            }
         }
 
         /* Add these new styles for the loading state */
-        .main-action-btn.loading,
-        .practice-option-btn.loading {
+        .main-action-btn.loading {
             position: relative;
             color: transparent;  /* Hide button text while loading */
         }
 
-        .main-action-btn.loading::after,
-        .practice-option-btn.loading::after {
+        .main-action-btn.loading::after {
             content: "";
             position: absolute;
             width: 16px;
@@ -996,7 +953,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
         /* Streak Widget Styles */
         .streak-widget {
             background: linear-gradient(135deg, #FF6B6B, #FF8E53);
@@ -1450,6 +1406,151 @@
                 font-size: 1em;
             }
         }
+
+        /* Add these styles for the new practice section */
+        .practice-section {
+            text-align: center;
+        }
+
+        .practice-buttons {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .practice-option-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .practice-option-btn {
+            width: 200px;
+            height: 200px;
+            background-color: white;
+            border: 4px solid black;
+            border-radius: 0;
+            cursor: pointer;
+            box-shadow: 8px 8px 0 black;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .practice-option-btn:hover:not(:disabled) {
+            transform: translate(-4px, -4px);
+            box-shadow: 12px 12px 0 black;
+        }
+
+        .practice-option-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        /* Add styles for practice button images */
+        .practice-btn-image {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            border: 2px solid black;
+            object-fit: cover;
+        }
+
+        .practice-btn-label {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            color: black;
+        }
+
+        @media (max-width: 768px) {
+            .practice-buttons {
+                gap: 15px; /* Reduced gap for mobile */
+                /* Removed flex-direction: column to keep buttons side by side */
+            }
+
+            .practice-option-btn {
+                width: 140px; /* Smaller width for mobile */
+                height: 140px; /* Smaller height for mobile */
+            }
+
+            .practice-btn-label {
+                font-size: 1em; /* Slightly smaller font */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .practice-buttons {
+                gap: 10px; /* Even smaller gap for very small screens */
+            }
+
+            .practice-option-btn {
+                width: 120px; /* Even smaller for very small screens */
+                height: 120px;
+            }
+
+            .practice-btn-label {
+                font-size: 0.9em;
+            }
+        }
+
+        /* Add loading state for practice buttons */
+        .practice-option-btn.loading {
+            position: relative;
+            cursor: not-allowed;
+        }
+
+        .practice-option-btn.loading .practice-btn-image {
+            opacity: 0.3;
+        }
+
+        .practice-option-btn.loading::after {
+            content: "";
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            top: 50%;
+            left: 50%;
+            margin: -16px 0 0 -16px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #000;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Ensure disabled practice buttons don't have hover effects while loading */
+        .practice-option-btn:disabled.loading {
+            opacity: 1; /* Override the general disabled opacity */
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: 8px 8px 0 black !important;
+        }
+
+        .practice-option-btn:disabled.loading:hover {
+            transform: none !important;
+            box-shadow: 8px 8px 0 black !important;
+        }
+
+        /* Add styles for disabled practice buttons (not loading) */
+        .practice-option-btn:disabled:not(.loading) {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: 4px 4px 0 #ccc !important;
+        }
+
+        .practice-option-btn:disabled:not(.loading):hover {
+            transform: none !important;
+            box-shadow: 4px 4px 0 #ccc !important;
+        }
     </style>
 </head>
 <body>
@@ -1484,13 +1585,28 @@
                 </div>
             </div>
             
-            <!-- Existing action buttons widget -->
+            <!-- New Practice Section -->
+            <div class="widget practice-section">
+                <h2>🎯 Practice Random Case</h2>
+                <div class="practice-buttons">
+                    <div class="practice-option-container">
+                        <button class="practice-option-btn partner-btn" disabled style="opacity: 0.5;">
+                            <img src="https://static.wixstatic.com/media/38c04a_7dce5332589641638b1d3f8d502ccee5~mv2.png" alt="Practice with Partner" class="practice-btn-image">
+                        </button>
+                        <div class="practice-btn-label">Practice with Partner</div>
+                    </div>
+                    <div class="practice-option-container">
+                        <button class="practice-option-btn ai-btn" disabled style="opacity: 0.5;">
+                            <img src="https://static.wixstatic.com/media/38c04a_9adae049a0614bc982f62272276fdf70~mv2.png" alt="Practice with AI" class="practice-btn-image">
+                        </button>
+                        <div class="practice-btn-label">Practice with AI</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Updated action buttons widget -->
             <div class="widget action-buttons">
                 <div class="main-actions">
-                    <button class="main-action-btn practice-btn">
-                        <span class="emoji">🎯</span>
-                        Practice Random Case
-                    </button>
                     <button class="main-action-btn view-cases-btn">
                         <span class="emoji">🗺️</span>
                         View All Cases
@@ -1508,21 +1624,7 @@
                         Check out our YouTube Channel
                     </button>
                 </div>
-                <!-- Practice options dialog -->
-                <div class="practice-options" style="display: none;">
-                    <button class="practice-option-btn partner-btn">
-                        <span class="emoji">👥</span>
-                        Practice with Partner
-                    </button>
-                    <button class="practice-option-btn ai-btn">
-                        <span class="emoji">🤖</span>
-                        Practice with AI
-                    </button>
-                    <button class="practice-option-btn back-btn">
-                        <span class="emoji">↩️</span>
-                        Back
-                    </button>
-                </div>
+                <!-- Remove the practice options dialog since it's now a separate section -->
             </div>
 
             <!-- Exam Countdown Widget -->
@@ -2117,6 +2219,8 @@
                     // Don't initialize yet - wait for plan info if we don't have it
                     if (userAllowedTopics) {
                         initializeCaseMap();
+                        // Enable practice buttons now that we have both case structure and plan data
+                        enablePracticeButtons();
                     } else {
                         window.parent.postMessage({ type: 'getCurrentPlan' }, '*');
                     }
@@ -2164,6 +2268,8 @@
                     // Now that we have the plan info, initialize the case map if we have the case structure
                     if (caseStructureCache) {
                         initializeCaseMap();
+                        // Enable practice buttons now that we have both case structure and plan data
+                        enablePracticeButtons();
                     }
                     break;
             }
@@ -3160,21 +3266,22 @@
         }
 
         function initializeActionButtons() {
-            const practiceBtn = document.querySelector('.practice-btn');
             const viewCasesBtn = document.querySelector('.view-cases-btn');
             const whatsappBtn = document.querySelector('.whatsapp-btn');
             const mockTestBtn = document.querySelector('.mock-test-btn');
             const youtubeBtn = document.querySelector('.youtube-btn');
-            const practiceOptions = document.querySelector('.practice-options');
-            const mainActions = document.querySelector('.main-actions');
             const partnerBtn = document.querySelector('.partner-btn');
             const aiBtn = document.querySelector('.ai-btn');
-            const backBtn = document.querySelector('.back-btn');
 
-            practiceBtn.addEventListener('click', () => {
-                mainActions.style.display = 'none';
-                practiceOptions.style.display = 'flex';
-            });
+            // Show loading overlay on practice buttons initially until data is loaded
+            if (partnerBtn) {
+                partnerBtn.disabled = true;
+                partnerBtn.classList.add('loading');
+            }
+            if (aiBtn) {
+                aiBtn.disabled = true;
+                aiBtn.classList.add('loading');
+            }
 
             viewCasesBtn.addEventListener('click', () => {
                 // Switch to the case map tab
@@ -3225,30 +3332,47 @@
                 }, 1000);
             });
 
-            // Remove hardcoded allowed topics and use the user's plan topics instead
+            // Practice buttons functionality (now in separate section)
             partnerBtn.addEventListener('click', () => {
-                navigateToRandomCase('partner');
+                if (!partnerBtn.disabled) {
+                    navigateToRandomCase('partner');
+                }
             });
 
             aiBtn.addEventListener('click', () => {
-                navigateToRandomCase('ai');
+                if (!aiBtn.disabled) {
+                    navigateToRandomCase('ai');
+                }
             });
+        }
 
-            backBtn.addEventListener('click', () => {
-                practiceOptions.style.display = 'none';
-                mainActions.style.display = 'flex';
-            });
+        function enablePracticeButtons() {
+            const partnerBtn = document.querySelector('.partner-btn');
+            const aiBtn = document.querySelector('.ai-btn');
+            
+            if (partnerBtn) {
+                partnerBtn.disabled = false;
+                partnerBtn.classList.remove('loading');
+                partnerBtn.style.opacity = '1';
+            }
+            if (aiBtn) {
+                aiBtn.disabled = false;
+                aiBtn.classList.remove('loading');
+                aiBtn.style.opacity = '1';
+            }
         }
 
         function navigateToRandomCase(mode) {
             if (!caseStructureCache || !caseStructureCache.length) {
                 console.error('Case structure not loaded');
+                // Show user-friendly error message
+                alert('Case data is still loading. Please wait a moment and try again.');
                 return;
             }
 
             // Add loading state to the clicked button
             const button = mode === 'partner' ? document.querySelector('.partner-btn') : document.querySelector('.ai-btn');
-            button.classList.add('loading');
+            if (button) button.classList.add('loading');
 
             // Filter cases to only include those from the user's allowed topics (based on their plan)
             const eligibleCases = caseStructureCache.filter(caseItem => 
@@ -3257,7 +3381,8 @@
 
             if (eligibleCases.length === 0) {
                 console.error('No cases found for the user\'s plan');
-                button.classList.remove('loading'); // Remove loading state if error
+                if (button) button.classList.remove('loading'); // Remove loading state if error
+                alert('No cases are available for your current plan. Please upgrade to access more cases.');
                 return;
             }
 
@@ -3277,7 +3402,8 @@
                 }, '*');
             } catch (error) {
                 console.error('Navigation error:', error);
-                button.classList.remove('loading'); // Remove loading state if error
+                if (button) button.classList.remove('loading'); // Remove loading state if error
+                alert('Navigation failed. Please try again.');
             }
         }
 
