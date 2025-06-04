@@ -492,21 +492,71 @@ async function fetchTreeStructure() {
 }
 
 async function getCurrentUserPlan() {
-    try {
-        const member = await currentMember.getMember();
-        if (member) {
-            const ordersList = await orders.memberListOrders();
-            const activeOrders = ordersList.orders.filter(order => order.status === "ACTIVE");
+    const maxRetries = 5; // Increased retries
+    const baseDelay = 1000; // 1 second base delay
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            //console.log(`Getting user plans (attempt ${attempt}/${maxRetries})`);
             
-            if (activeOrders.length > 0) {
-                // Return all active plan names
-                return activeOrders.map(order => order.planName);
+            const member = await currentMember.getMember();
+            if (member) {
+                const ordersList = await orders.memberListOrders();
+                
+                // Add null check to prevent undefined error
+                if (ordersList && ordersList.orders && Array.isArray(ordersList.orders)) {
+                    const activeOrders = ordersList.orders.filter(order => order.status === "ACTIVE");
+                    
+                    if (activeOrders.length > 0) {
+                        // Return all active plan names
+                        const userPlans = activeOrders.map(order => order.planName);
+                        //console.log("Successfully retrieved user plans:", userPlans);
+                        return userPlans;
+                    } else {
+                        // User has no active orders - this is valid
+                        //console.log("User has no active orders, defaulting to Free plan");
+                        return ["Free"];
+                    }
+                } else {
+                    throw new Error("Invalid ordersList response - retrying...");
+                }
+            } else {
+                // No member found - this could be a guest user
+                //console.log("No member found, defaulting to Free plan");
+                return ["Free"];
             }
+        } catch (error) {
+            console.error(`Error getting user plans (attempt ${attempt}/${maxRetries}):`, error);
+            
+            // If this is the last attempt, try one more time after a longer delay
+            if (attempt === maxRetries) {
+                //console.log("Final retry attempt after extended delay...");
+                await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
+                
+                // One final attempt
+                try {
+                    const member = await currentMember.getMember();
+                    if (member) {
+                        const ordersList = await orders.memberListOrders();
+                        if (ordersList && ordersList.orders && Array.isArray(ordersList.orders)) {
+                            const activeOrders = ordersList.orders.filter(order => order.status === "ACTIVE");
+                            if (activeOrders.length > 0) {
+                                return activeOrders.map(order => order.planName);
+                            }
+                        }
+                    }
+                    return ["Free"];
+                } catch (finalError) {
+                    console.error("Final attempt failed:", finalError);
+                    return ["Free"];
+                }
+            }
+            
+            // Wait before retrying with exponential backoff
+            const delay = baseDelay * Math.pow(2, attempt - 1);
+            //console.log(`Waiting ${delay}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
-        return ["Free"];
-    } catch (error) {
-        console.error("Error getting current user plans:", error);
-        return ["Free"];
     }
 }
 
