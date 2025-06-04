@@ -3365,7 +3365,7 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         this.element = element;
         this.data = null;
         this.currentTopic = null;
-        this.highlightedPath = null;
+        this.selectedIds = []; // Changed from highlightedPath to selectedIds
         this.mode = 'review';
       }
       setData(data) {
@@ -3405,7 +3405,7 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         return items.map(item => this.renderItem(item)).join('');
       }
       renderItem(item) {
-        const isHighlighted = this.isItemHighlighted(item);
+        const isHighlighted = this.selectedIds.includes(item.id); // Simplified highlighting check
         const highlightClass = isHighlighted ? 'highlighted' : '';
         const lockedClass = item.locked ? 'locked' : '';
         const loadingIcon = item.loading ? '<div class="loading-icon"></div>' : '';
@@ -3435,24 +3435,6 @@ Please fill in the "Status" field for each checklist item based on the chat hist
       }
       maskCaseName(item) {
         return `Case ${item.caseUID}`;
-      }
-      isItemHighlighted(item) {
-        if (!this.highlightedPath) return false;
-        const [highlightedTopic, highlightedCategory, highlightedSubCategory, highlightedCase] = this.highlightedPath;
-        switch (item.type) {
-          case 'freeSection':
-            return highlightedTopic === 'FreeCases';
-          case 'topic':
-            return item.id === highlightedTopic || item.id === highlightedCategory;
-          case 'category':
-            return item.id === `${highlightedTopic}:${highlightedCategory}` || item.id === highlightedCategory;
-          case 'subCategory':
-            return item.id === `${highlightedTopic}:${highlightedCategory}:${highlightedSubCategory}` || item.id === highlightedSubCategory;
-          case 'caseName':
-            return item.id === `caseName:${highlightedCase}`;
-          default:
-            return false;
-        }
       }
       addEventListeners() {
         this.element.querySelectorAll('.tree-item-header').forEach(header => {
@@ -3526,13 +3508,39 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         window.parent.postMessage({ type: 'caseSelected', caseName: caseName }, '*');
       }
       highlightCase(topic, category, subCategory, caseName) {
-        if (topic || category || subCategory || caseName) {
-          this.highlightedPath = [topic, category, subCategory, caseName];
-        } else {
-          this.highlightedPath = null;
+        // Reset selected items array
+        this.selectedIds = [];
+        
+        // Find ALL instances of the case and their ancestors
+        const findAndMarkAllSelected = (items, targetCaseName, parentPath = []) => {
+            if (!Array.isArray(items)) return;
+            
+            for (let item of items) {
+                const currentPath = [...parentPath, item.id];
+                
+                // Check if this is a case item with the matching case name
+                if (item.type === 'caseName' && item.id === `caseName:${targetCaseName}`) {
+                    // We found a target instance, add its path to selected items
+                    this.selectedIds.push(...currentPath);
+                }
+                
+                // Always check children, regardless of whether we found a match
+                if (item.children) {
+                    findAndMarkAllSelected(item.children, targetCaseName, currentPath);
+                }
+            }
+        };
+        
+        // Only proceed if we have a case name to highlight
+        if (caseName) {
+            findAndMarkAllSelected(this.data, caseName);
+            
+            // Remove duplicates from selectedIds
+            this.selectedIds = [...new Set(this.selectedIds)];
         }
+        
         if (this.data) {
-          this.render();
+            this.render();
         }
       }
       setMode(mode) {
