@@ -873,6 +873,11 @@ async function loadCaseData(caseName) {
                 }
             } else {
                 showError("You don't have access to this case. Please upgrade your plan.");
+                // Redirect to pricing page after showing the error
+                setTimeout(() => {
+                    wixLocationFrontend.to('/plans-pricing');
+                }, 2000); // 2 second delay to allow user to read the error message
+                return;
             }
         }
     } catch (error) {
@@ -889,7 +894,7 @@ async function loadCaseData(caseName) {
 function showError(message) {
     $workbenchComponent.postMessage({
         type: 'showError',
-        message: message
+        data: { message: message }
     });
 }
 
