@@ -112,21 +112,58 @@ async function initializeAzureConfig() {
 }
 
 async function findCasePath(caseName) {
-    const treeStructure = await fetchTreeStructure();
-    for (const [topic, topicData] of Object.entries(treeStructure)) {
+    // First check if the case is a free case
+    const freeCasesStructure = await fetchFreeCasesStructure();
+    for (const [topic, topicData] of Object.entries(freeCasesStructure)) {
         if (Array.isArray(topicData)) {
-            if (topicData.includes(caseName)) {
-                return [topic, null, null, caseName];
+            // Check if any case in the array matches
+            const caseItem = topicData.find(item => item.caseName === caseName);
+            if (caseItem) {
+                return ['FreeCases', `FreeCases_${topic}`, `FreeCases_${topic}`, caseName];
             }
         } else {
             for (const [category, categoryData] of Object.entries(topicData)) {
                 if (Array.isArray(categoryData)) {
-                    if (categoryData.includes(caseName)) {
-                        return [topic, category, null, caseName];
+                    // Check if any case in the array matches
+                    const caseItem = categoryData.find(item => item.caseName === caseName);
+                    if (caseItem) {
+                        return ['FreeCases', `FreeCases_${topic}`, `FreeCases_${topic}:${category}`, caseName];
                     }
                 } else {
                     for (const [subCategory, cases] of Object.entries(categoryData)) {
-                        if (cases.includes(caseName)) {
+                        // Check if any case in the array matches
+                        const caseItem = cases.find(item => item.caseName === caseName);
+                        if (caseItem) {
+                            return ['FreeCases', `FreeCases_${topic}`, `FreeCases_${topic}:${category}:${subCategory}`, caseName];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // If not found in free cases, check regular tree structure
+    const treeStructure = await fetchTreeStructure();
+    for (const [topic, topicData] of Object.entries(treeStructure)) {
+        if (Array.isArray(topicData)) {
+            // Check if any case in the array matches
+            const caseItem = topicData.find(item => item.caseName === caseName);
+            if (caseItem) {
+                return [topic, topic, topic, caseName];
+            }
+        } else {
+            for (const [category, categoryData] of Object.entries(topicData)) {
+                if (Array.isArray(categoryData)) {
+                    // Check if any case in the array matches
+                    const caseItem = categoryData.find(item => item.caseName === caseName);
+                    if (caseItem) {
+                        return [topic, category, category, caseName];
+                    }
+                } else {
+                    for (const [subCategory, cases] of Object.entries(categoryData)) {
+                        // Check if any case in the array matches
+                        const caseItem = cases.find(item => item.caseName === caseName);
+                        if (caseItem) {
                             return [topic, category, subCategory, caseName];
                         }
                     }
@@ -175,23 +212,106 @@ function showCaseSelectionLightbox() {
     $combinedWidget.postMessage({ type: 'openCaseSelection' });
 }
 
+async function fetchFreeCasesStructure() {
+    try {
+        const results = await wixData.query("BrainBank")
+            .eq("FreeCase", true)
+            .limit(1000)
+            .find();
+
+        const freeCasesStructure = {};
+        results.items.forEach(item => {
+            const { topic, category, subCategory, caseName, caseUID, synonyms } = item;
+
+            if (isRedundantStructure(topic, category, subCategory)) {
+                if (!freeCasesStructure[topic]) {
+                    freeCasesStructure[topic] = [];
+                }
+                freeCasesStructure[topic].push({ 
+                    caseName, 
+                    caseUID, 
+                    synonyms: synonyms || [] 
+                });
+            } else if (category === subCategory) {
+                if (!freeCasesStructure[topic]) {
+                    freeCasesStructure[topic] = {};
+                }
+                if (!freeCasesStructure[topic][category]) {
+                    freeCasesStructure[topic][category] = [];
+                }
+                freeCasesStructure[topic][category].push({ 
+                    caseName, 
+                    caseUID, 
+                    synonyms: synonyms || [] 
+                });
+            } else {
+                if (!freeCasesStructure[topic]) {
+                    freeCasesStructure[topic] = {};
+                }
+                if (!freeCasesStructure[topic][category]) {
+                    freeCasesStructure[topic][category] = {};
+                }
+                if (!freeCasesStructure[topic][category][subCategory]) {
+                    freeCasesStructure[topic][category][subCategory] = [];
+                }
+                freeCasesStructure[topic][category][subCategory].push({ 
+                    caseName, 
+                    caseUID, 
+                    synonyms: synonyms || [] 
+                });
+            }
+        });
+
+        return freeCasesStructure;
+    } catch (error) {
+        console.error("Error fetching free cases structure:", error);
+        return {};
+    }
+}
+
 async function loadTreeViewData() {
     try {
         const userPlan = await getCurrentUserPlan();
         const allowedTopics = getAllowedTopics(userPlan);
         const treeStructure = await fetchTreeStructure();
+        const freeCasesStructure = await fetchFreeCasesStructure();
         
         // Cache the full tree structure for instant navigation later
         cachedTreeStructure = treeStructure;
         
-        // Build full tree data by including all nested levels
-        const fullTreeData = Object.keys(treeStructure).map(topic => ({
+        // Build the tree data starting with free cases if any exist
+        const fullTreeData = [];
+        
+        // Add Free Cases section at the top if there are any free cases
+        if (Object.keys(freeCasesStructure).length > 0) {
+            const freeCasesChildren = Object.keys(freeCasesStructure).map(topic => ({
+                id: `FreeCases_${topic}`,
+                name: camelCaseToSentence(topic),
+                type: 'topic',
+                children: transformTopicDataForTreeView(topic, freeCasesStructure[topic]),
+                locked: false // Free cases are never locked
+            }));
+
+            fullTreeData.push({
+                id: 'FreeCases',
+                name: '🆓 Free Cases',
+                type: 'freeSection',
+                children: freeCasesChildren,
+                locked: false
+            });
+        }
+        
+        // Add regular topics
+        const regularTopics = Object.keys(treeStructure).map(topic => ({
             id: topic,
             name: camelCaseToSentence(topic),
             type: 'topic',
-            children: transformTopicDataForTreeView(topic, treeStructure[topic]), // preloads categories, subcategories, and case names
+            children: transformTopicDataForTreeView(topic, treeStructure[topic]),
             locked: !allowedTopics.includes(topic)
         }));
+        
+        fullTreeData.push(...regularTopics);
+        
         $combinedWidget.postMessage({ type: 'setData', data: fullTreeData });
     } catch (err) {
         console.error("Error loading initial tree view data:", err);
@@ -207,12 +327,16 @@ async function loadCaseData(caseName) {
         
         const results = await wixData.query("BrainBank")
             .eq("caseName", caseName)
-            .include("topic", "candidateInfo", "findingsImage", "findingsText", "checklist")
+            .include("topic", "candidateInfo", "findingsImage", "findingsText", "checklist", "FreeCase")
             .find();
         
         if (results.items.length > 0) {
             const caseData = results.items[0];
-            if (allowedTopics.includes(caseData.topic)) {
+            // Check if user has topic access OR if it's a free case
+            const hasTopicAccess = allowedTopics.includes(caseData.topic);
+            const isFreeCase = caseData.FreeCase || false;
+            
+            if (hasTopicAccess || isFreeCase) {
                 // Convert Wix media URL to regular HTTPS URL if it exists
                 if (caseData.findingsImage) {
                     // First replace the wix:image prefix
@@ -403,7 +527,7 @@ function getAllowedTopics(plans) {
         "Complete BrainBank x 4 months": ["BreakingBadNews", "AngryPatient", "Psychiatry_SymptomaticDifferentials",
             "Dermatology_SymptomaticDifferentials","Medicine_SymptomaticDifferentials","EyeENT_SymptomaticDifferentials",
             "MedicalEthics","Paediatrics_SymptomaticDifferentials","Counseling","OBGYN_SymptomaticDifferentials", "Teaching"],
-        "Free": ["BreakingBadNews"],
+        "Free": [], // Remove hardcoded Breaking Bad News - free cases will be controlled by FreeCase boolean
         "Breaking Bad News": ["BreakingBadNews"],
         "Angry Patient": ["AngryPatient"],
         "Paediatrics Symptomatic Differentials": ["Paediatrics_SymptomaticDifferentials"],
@@ -508,11 +632,16 @@ async function checkCaseAccessAndRedirect(caseName) {
         const results = await wixData.query("BrainBank")
             .eq("caseName", caseName)
             .include("topic")
+            .include("FreeCase")
             .find();
         
         if (results.items.length > 0) {
             const caseData = results.items[0];
-            if (!allowedTopics.includes(caseData.topic)) {
+            // Check if user has topic access OR if it's a free case
+            const hasTopicAccess = allowedTopics.includes(caseData.topic);
+            const isFreeCase = caseData.FreeCase || false;
+            
+            if (!hasTopicAccess && !isFreeCase) {
                 console.error("User does not have access to this case:", caseName);
                 
                 // Show user-friendly message before redirect

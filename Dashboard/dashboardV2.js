@@ -160,7 +160,7 @@ function getAllowedTopics(plans) {
         "Complete BrainBank x 4 months": ["BreakingBadNews", "AngryPatient", "Psychiatry_SymptomaticDifferentials",
             "Dermatology_SymptomaticDifferentials","Medicine_SymptomaticDifferentials","EyeENT_SymptomaticDifferentials",
             "MedicalEthics","Paediatrics_SymptomaticDifferentials","Counseling","OBGYN_SymptomaticDifferentials", "Teaching"],
-        "Free": ["BreakingBadNews"],
+        "Free": [], // Remove hardcoded Breaking Bad News - free cases will be controlled by FreeCase boolean
         "Breaking Bad News": ["BreakingBadNews"],
         "Angry Patient": ["AngryPatient"],
         "Paediatrics Symptomatic Differentials": ["Paediatrics_SymptomaticDifferentials"],
@@ -510,6 +510,7 @@ async function getCaseStructure() {
             subCategory: item.subCategory,
             subCategoryFormatted: camelCaseToSentence(item.subCategory),
             isNewCase: item.NewCase || false,
+            isFreeCase: item.FreeCase || false,
             // Include synonyms array if it exists
             synonyms: item.synonyms || []
         }));

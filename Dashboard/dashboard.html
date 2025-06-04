@@ -1729,6 +1729,21 @@
                 <!-- Add the new special sections -->
                 <div class="special-sections">
                     <div class="special-section">
+                        <div class="special-section-header case-map-header" id="freeCasesHeader">
+                            <div class="case-map-header-content">
+                                <div class="title-container">
+                                    <h3>🆓 Free Cases</h3>
+                                    <span class="progress-count" id="freeCasesCount">0/0</span>
+                                    <span class="case-map-arrow">▶</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="special-section-content case-map-content" id="freeCasesContent">
+                            <!-- Free cases will be populated here in hierarchical structure -->
+                        </div>
+                    </div>
+                    
+                    <div class="special-section">
                         <div class="special-section-header case-map-header" id="newCasesHeader">
                             <div class="case-map-header-content">
                                 <div class="title-container">
@@ -2599,7 +2614,148 @@
             // Group cases by topic, category, and subcategory while adding a "completed" flag
             const caseMap = {};
             
-            // First, handle new cases
+            // First, handle free cases
+            const freeCasesContent = document.getElementById('freeCasesContent');
+            const freeCasesHeader = document.getElementById('freeCasesHeader');
+            const freeCasesCount = document.getElementById('freeCasesCount');
+            if (freeCasesContent && freeCasesHeader) {
+                const freeCases = caseStructureCache.filter(caseItem => caseItem.isFreeCase);
+                if (freeCases.length > 0) {
+                    // Update the count display
+                    const completedFreeCases = freeCases.filter(caseItem => 
+                        caseMapUserResponses &&
+                        caseMapUserResponses.responses &&
+                        caseMapUserResponses.responses[caseItem.caseName] &&
+                        caseMapUserResponses.responses[caseItem.caseName].length > 0
+                    ).length;
+                    freeCasesCount.textContent = `${completedFreeCases}/${freeCases.length}`;
+
+                    // Group free cases by topic, category, and subcategory
+                    const freeCaseMap = {};
+                    
+                    freeCases.forEach(caseItem => {
+                        const topic = caseItem.topicFormatted;
+                        const category = caseItem.categoryFormatted;
+                        const subcategory = caseItem.subCategoryFormatted;
+
+                        if (!freeCaseMap[topic]) {
+                            freeCaseMap[topic] = {
+                                categories: {},
+                                progress: { total: 0, completed: 0 }
+                            };
+                        }
+
+                        if (!freeCaseMap[topic].categories[category]) {
+                            freeCaseMap[topic].categories[category] = {
+                                subcategories: {},
+                                cases: [],
+                                progress: { total: 0, completed: 0 }
+                            };
+                        }
+
+                        if (category !== subcategory) {
+                            if (!freeCaseMap[topic].categories[category].subcategories[subcategory]) {
+                                freeCaseMap[topic].categories[category].subcategories[subcategory] = {
+                                    cases: [],
+                                    progress: { total: 0, completed: 0 }
+                                };
+                            }
+                        }
+
+                        const isCompleted = caseMapUserResponses &&
+                            caseMapUserResponses.responses &&
+                            caseMapUserResponses.responses[caseItem.caseName] &&
+                            caseMapUserResponses.responses[caseItem.caseName].length > 0;
+
+                        const caseObj = {
+                            name: caseItem.displayCaseName,
+                            caseName: caseItem.caseName,
+                            completed: isCompleted,
+                            topic: caseItem.topic,
+                            isFreeCase: true
+                        };
+
+                        // Update progress at all levels
+                        freeCaseMap[topic].progress.total++;
+                        if (isCompleted) freeCaseMap[topic].progress.completed++;
+
+                        freeCaseMap[topic].categories[category].progress.total++;
+                        if (isCompleted) freeCaseMap[topic].categories[category].progress.completed++;
+
+                        if (category !== subcategory) {
+                            freeCaseMap[topic].categories[category].subcategories[subcategory].progress.total++;
+                            if (isCompleted) freeCaseMap[topic].categories[category].subcategories[subcategory].progress.completed++;
+                            freeCaseMap[topic].categories[category].subcategories[subcategory].cases.push(caseObj);
+                        } else {
+                            freeCaseMap[topic].categories[category].cases.push(caseObj);
+                        }
+                    });
+
+                    // Create the hierarchical structure for free cases
+                    Object.entries(freeCaseMap).forEach(([topic, topicData]) => {
+                        const topicElement = createMapItem(
+                            topic,
+                            'topic',
+                            `${topicData.progress.completed}/${topicData.progress.total}`,
+                            null,
+                            true // Mark as free case
+                        );
+                        const topicContent = document.createElement('div');
+                        topicContent.className = 'case-map-content';
+
+                        Object.entries(topicData.categories).forEach(([category, categoryData]) => {
+                            const categoryElement = createMapItem(
+                                category,
+                                'category',
+                                `${categoryData.progress.completed}/${categoryData.progress.total}`
+                            );
+                            const categoryContent = document.createElement('div');
+                            categoryContent.className = 'case-map-content';
+
+                            if (Object.keys(categoryData.subcategories).length > 0) {
+                                Object.entries(categoryData.subcategories).forEach(([subcategory, subcategoryData]) => {
+                                    const subcategoryElement = createMapItem(
+                                        subcategory,
+                                        'subcategory',
+                                        `${subcategoryData.progress.completed}/${subcategoryData.progress.total}`
+                                    );
+                                    const subcategoryContent = document.createElement('div');
+                                    subcategoryContent.className = 'case-map-content';
+
+                                    subcategoryData.cases.forEach(caseObj => {
+                                        const caseElement = createCaseElement(caseObj);
+                                        subcategoryContent.appendChild(caseElement);
+                                    });
+
+                                    subcategoryElement.appendChild(subcategoryContent);
+                                    categoryContent.appendChild(subcategoryElement);
+                                });
+                            } else {
+                                categoryData.cases.forEach(caseObj => {
+                                    const caseElement = createCaseElement(caseObj);
+                                    categoryContent.appendChild(caseElement);
+                                });
+                            }
+
+                            categoryElement.appendChild(categoryContent);
+                            topicContent.appendChild(categoryElement);
+                        });
+
+                        topicElement.appendChild(topicContent);
+                        freeCasesContent.appendChild(topicElement);
+                    });
+
+                    // Add click handler for free cases section
+                    freeCasesHeader.addEventListener('click', () => {
+                        freeCasesHeader.querySelector('.case-map-arrow').classList.toggle('active');
+                        freeCasesContent.classList.toggle('active');
+                    });
+                } else {
+                    freeCasesContent.innerHTML = '<p>No free cases available at the moment.</p>';
+                }
+            }
+            
+            // Then, handle new cases
             const newCasesContent = document.getElementById('newCasesContent');
             const newCasesHeader = document.getElementById('newCasesHeader');
             const newCasesCount = document.getElementById('newCasesCount');
@@ -2840,10 +2996,8 @@
             };
 
             // Build the HTML structure
-            // Sort topics to put "Breaking Bad News" first
+            // Remove the special sorting for Breaking Bad News since it's no longer hardcoded as free
             const sortedTopics = Object.entries(caseMap).sort(([topicA], [topicB]) => {
-                if (topicA === "Breaking Bad News") return -1;
-                if (topicB === "Breaking Bad News") return 1;
                 return topicA.localeCompare(topicB);
             });
 
@@ -2854,7 +3008,7 @@
                     'topic',
                     `${topicData.progress.completed}/${topicData.progress.total}`,
                     averageScores,
-                    topic === "Breaking Bad News" // Pass flag for Breaking Bad News topic
+                    false // No longer mark Breaking Bad News as special
                 );
                 const topicContent = document.createElement('div');
                 topicContent.className = 'case-map-content';
@@ -2893,9 +3047,9 @@
                                     const buttonContainer = document.createElement('div');
                                     buttonContainer.className = 'case-buttons';
                                     
-                                    // Find the original case to get the topic
+                                    // Find the original case to get the topic and check if it's free
                                     const originalCase = caseStructureCache.find(c => c.displayCaseName === caseObj.name);
-                                    const hasCaseAccess = originalCase && userAllowedTopics.includes(originalCase.topic);
+                                    const hasCaseAccess = originalCase && (userAllowedTopics.includes(originalCase.topic) || originalCase.isFreeCase);
                                     
                                     const reviewButton = document.createElement('button');
                                     reviewButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
@@ -3030,9 +3184,9 @@
                             const buttonContainer = document.createElement('div');
                             buttonContainer.className = 'case-buttons';
                             
-                            // Find the original case to get the topic
+                            // Find the original case to get the topic and check if it's free
                             const originalCase = caseStructureCache.find(c => c.displayCaseName === caseObj.name);
-                            const hasCaseAccess = originalCase && userAllowedTopics.includes(originalCase.topic);
+                            const hasCaseAccess = originalCase && (userAllowedTopics.includes(originalCase.topic) || originalCase.isFreeCase);
                             
                             const reviewButton = document.createElement('button');
                             reviewButton.className = `case-button${!hasCaseAccess ? ' locked' : ''}`;
@@ -3162,7 +3316,7 @@
             });
         }
 
-        function createMapItem(title, level, progressInfo, domainScores = null, isBreakingBadNews = false) {
+        function createMapItem(title, level, progressInfo, domainScores = null, isFreeCase = false) {
             const itemContainer = document.createElement('div');
             itemContainer.className = 'case-map-item';
             
@@ -3190,8 +3344,8 @@
             const titleSpan = document.createElement('span');
             titleSpan.textContent = title;
             
-            // Add FREE tag if it's Breaking Bad News topic
-            if (isBreakingBadNews) {
+            // Add FREE tag if it's a free case
+            if (isFreeCase) {
                 const freeTag = document.createElement('span');
                 freeTag.className = 'free-tag';
                 freeTag.textContent = 'FREE';
@@ -3374,13 +3528,13 @@
             const button = mode === 'partner' ? document.querySelector('.partner-btn') : document.querySelector('.ai-btn');
             if (button) button.classList.add('loading');
 
-            // Filter cases to only include those from the user's allowed topics (based on their plan)
+            // Filter cases to include those from the user's allowed topics OR free cases
             const eligibleCases = caseStructureCache.filter(caseItem => 
-                userAllowedTopics && userAllowedTopics.includes(caseItem.topic)
+                (userAllowedTopics && userAllowedTopics.includes(caseItem.topic)) || caseItem.isFreeCase
             );
 
             if (eligibleCases.length === 0) {
-                console.error('No cases found for the user\'s plan');
+                console.error('No cases found for the user\'s plan or free cases');
                 if (button) button.classList.remove('loading'); // Remove loading state if error
                 alert('No cases are available for your current plan. Please upgrade to access more cases.');
                 return;
@@ -3418,7 +3572,8 @@
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'case-buttons';
             
-            const hasCaseAccess = userAllowedTopics.includes(caseObj.topic);
+            // Check access: either user has plan access to the topic OR it's a free case
+            const hasCaseAccess = (caseObj.topic && userAllowedTopics.includes(caseObj.topic)) || caseObj.isFreeCase;
             
             // Create Review button
             const reviewButton = document.createElement('button');

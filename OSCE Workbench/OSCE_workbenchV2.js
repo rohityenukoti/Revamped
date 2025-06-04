@@ -759,7 +759,7 @@ function getAllowedTopics(plans) {
         "Complete BrainBank x 4 months": ["BreakingBadNews", "AngryPatient", "Psychiatry_SymptomaticDifferentials",
             "Dermatology_SymptomaticDifferentials","Medicine_SymptomaticDifferentials","EyeENT_SymptomaticDifferentials",
             "MedicalEthics","Paediatrics_SymptomaticDifferentials","Counseling","OBGYN_SymptomaticDifferentials", "Teaching"],
-        "Free": ["BreakingBadNews"],
+        "Free": [], // Remove hardcoded Breaking Bad News - free cases will be controlled by FreeCase boolean
         "Breaking Bad News": ["BreakingBadNews"],
         "Angry Patient": ["AngryPatient"],
         "Paediatrics Symptomatic Differentials": ["Paediatrics_SymptomaticDifferentials"],
@@ -831,12 +831,16 @@ async function loadCaseData(caseName) {
         
         const results = await wixData.query("BrainBank")
             .eq("caseName", caseName)
-            .include("topic", "candidateInfo", "checklist", "inTimeSections", "findingsImage", "findingsText", "patientInfo", "keyPoints")
+            .include("topic", "candidateInfo", "checklist", "inTimeSections", "findingsImage", "findingsText", "patientInfo", "keyPoints", "FreeCase")
             .find();
         
         if (results.items.length > 0) {
             const caseData = results.items[0];
-            if (allowedTopics.includes(caseData.topic)) {
+            // Check if user has topic access OR if it's a free case
+            const hasTopicAccess = allowedTopics.includes(caseData.topic);
+            const isFreeCase = caseData.FreeCase || false;
+            
+            if (hasTopicAccess || isFreeCase) {
                 // Convert Wix media URL to regular HTTPS URL if it exists
                 let findingsImageUrl = caseData.findingsImage;
                 if (findingsImageUrl) {

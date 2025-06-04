@@ -2019,6 +2019,56 @@
             height: auto;
         }
     }
+
+    /* Free Cases Section Styling */
+    .tree-item[data-id="FreeCases"] > .tree-item-header {
+        background-color: #4CAF50;
+        color: white;
+        font-size: 1.1em;
+        border: 3px solid #000;
+        box-shadow: 4px 4px 0 #000;
+    }
+
+    .tree-item[data-id="FreeCases"] > .tree-item-header:hover {
+        background-color: #45a049;
+    }
+
+    /* Free cases topics (children of FreeCases) */
+    .tree-item[data-id^="FreeCases_"] > .tree-item-header {
+        background-color: #81C784;
+        color: #000;
+        border-left: 4px solid #4CAF50;
+    }
+
+    .tree-item[data-id^="FreeCases_"] > .tree-item-header:hover {
+        background-color: #66BB6A;
+    }
+
+    /* Free cases - case items */
+    .tree-item[data-id^="FreeCases"] .case-item {
+        border-left: 4px solid #4CAF50;
+        background-color: #E8F5E8;
+    }
+
+    .tree-item[data-id^="FreeCases"] .case-item:hover {
+        background-color: #C8E6C9;
+    }
+
+    /* Free cases highlighted states */
+    .tree-item[data-id="FreeCases"] > .tree-item-header.highlighted {
+        border: 4px solid #2E7D32;
+        background-color: #388E3C;
+    }
+
+    .tree-item[data-id^="FreeCases_"] > .tree-item-header.highlighted {
+        border: 4px solid #2E7D32;
+        background-color: #66BB6A;
+    }
+
+    .tree-item[data-id^="FreeCases"] .case-item.highlighted {
+        border: 4px solid #2E7D32;
+        background-color: #A5D6A7;
+    }
   </style>
 
   <!-- External Scripts -->
@@ -3390,12 +3440,14 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         if (!this.highlightedPath) return false;
         const [highlightedTopic, highlightedCategory, highlightedSubCategory, highlightedCase] = this.highlightedPath;
         switch (item.type) {
+          case 'freeSection':
+            return highlightedTopic === 'FreeCases';
           case 'topic':
-            return item.id === highlightedTopic;
+            return item.id === highlightedTopic || item.id === highlightedCategory;
           case 'category':
-            return item.id === `${highlightedTopic}:${highlightedCategory}`;
+            return item.id === `${highlightedTopic}:${highlightedCategory}` || item.id === highlightedCategory;
           case 'subCategory':
-            return item.id === `${highlightedTopic}:${highlightedCategory}:${highlightedSubCategory}`;
+            return item.id === `${highlightedTopic}:${highlightedCategory}:${highlightedSubCategory}` || item.id === highlightedSubCategory;
           case 'caseName':
             return item.id === `caseName:${highlightedCase}`;
           default:
