@@ -155,14 +155,81 @@ function showCaseSelectionLightbox() {
     });
 }
 
+async function fetchFreeCasesStructure() {
+    try {
+        const results = await wixData.query("BrainBank")
+            .eq("FreeCase", true)
+            .limit(1000)
+            .find();
+
+        const freeCasesStructure = {};
+        results.items.forEach(item => {
+            const { topic, category, subCategory, caseName, caseUID } = item;
+
+            if (isRedundantStructure(topic, category, subCategory)) {
+                if (!freeCasesStructure[topic]) {
+                    freeCasesStructure[topic] = [];
+                }
+                freeCasesStructure[topic].push({ caseName, caseUID });
+            } else if (category === subCategory) {
+                if (!freeCasesStructure[topic]) {
+                    freeCasesStructure[topic] = {};
+                }
+                if (!freeCasesStructure[topic][category]) {
+                    freeCasesStructure[topic][category] = [];
+                }
+                freeCasesStructure[topic][category].push({ caseName, caseUID });
+            } else {
+                if (!freeCasesStructure[topic]) {
+                    freeCasesStructure[topic] = {};
+                }
+                if (!freeCasesStructure[topic][category]) {
+                    freeCasesStructure[topic][category] = {};
+                }
+                if (!freeCasesStructure[topic][category][subCategory]) {
+                    freeCasesStructure[topic][category][subCategory] = [];
+                }
+                freeCasesStructure[topic][category][subCategory].push({ caseName, caseUID });
+            }
+        });
+
+        return freeCasesStructure;
+    } catch (error) {
+        console.error("Error fetching free cases structure:", error);
+        return {};
+    }
+}
+
 async function loadTreeViewData() {
     try {
         const userPlan = await getCurrentUserPlan();
         const allowedTopics = getAllowedTopics(userPlan);
         const treeStructure = await fetchTreeStructure();
+        const freeCasesStructure = await fetchFreeCasesStructure();
         
-        // Transform the complete tree structure
-        const completeTreeData = Object.entries(treeStructure).map(([topic, topicData]) => {
+        // Create the complete tree data array
+        const completeTreeData = [];
+        
+        // Add Free Cases section at the top if there are any free cases
+        if (Object.keys(freeCasesStructure).length > 0) {
+            const freeCasesChildren = Object.entries(freeCasesStructure).map(([topic, topicData]) => ({
+                id: `FreeCases:${topic}`,
+                name: camelCaseToSentence(topic),
+                type: 'freeTopic',
+                children: transformTopicDataForTreeView(`FreeCases:${topic}`, topicData)
+            }));
+            
+            completeTreeData.push({
+                id: 'FreeCases',
+                name: 'Free Cases',
+                type: 'freeCasesSection',
+                locked: false,
+                children: freeCasesChildren
+            });
+        }
+        
+        // Transform the regular tree structure
+        const regularTreeData = Object.entries(treeStructure).map(([topic, topicData]) => {
             const isLocked = !allowedTopics.includes(topic);
             return {
                 id: topic,
@@ -172,6 +239,9 @@ async function loadTreeViewData() {
                 children: isLocked ? null : transformTopicDataForTreeView(topic, topicData)
             };
         });
+        
+        // Add regular tree data after free cases
+        completeTreeData.push(...regularTreeData);
 
         $workbenchComponent.postMessage({ 
             type: 'setTreeData', 
@@ -453,8 +523,54 @@ async function handleCaseSelection(selectedId) {
             $workbenchComponent.postMessage({ 
                 type: 'closeCaseSelection' 
             });
+        } else if (selectedId.startsWith('FreeCases:')) {
+            // This is a free cases topic or category selection
+            const freeCasesStructure = await fetchFreeCasesStructure();
+            const parts = selectedId.split(':');
+            const topicId = parts[1]; // Get the actual topic name (e.g., "BreakingBadNews")
+            const categoryId = parts[2]; // Get category if exists
+            
+            const topicData = freeCasesStructure[topicId];
+            
+            if (Array.isArray(topicData)) {
+                // Direct cases under topic
+                const transformedData = transformTopicDataForTreeView(`FreeCases:${topicId}`, topicData);
+                $workbenchComponent.postMessage({ 
+                    type: 'updateTopic', 
+                    data: {
+                        topic: `FreeCases:${topicId}`, 
+                        data: transformedData
+                    }
+                });
+            } else if (categoryId && Array.isArray(topicData[categoryId])) {
+                // Direct cases under category
+                const transformedData = [{
+                    id: selectedId,
+                    name: camelCaseToSentence(categoryId),
+                    type: 'category',
+                    children: transformTopicDataForTreeView(`FreeCases:${topicId}`, {[categoryId]: topicData[categoryId]})
+                }];
+                $workbenchComponent.postMessage({ 
+                    type: 'updateTopic', 
+                    data: {
+                        topic: `FreeCases:${topicId}`, 
+                        data: transformedData
+                    }
+                });
+            } else if (topicData) {
+                const transformedData = transformTopicDataForTreeView(`FreeCases:${topicId}`, topicData);
+                $workbenchComponent.postMessage({ 
+                    type: 'updateTopic', 
+                    data: {
+                        topic: `FreeCases:${topicId}`, 
+                        data: transformedData
+                    }
+                });
+            } else {
+                console.error("Free case topic not found:", topicId);
+            }
         } else {
-            // This is a topic or category selection
+            // This is a regular topic or category selection
             const treeStructure = await fetchTreeStructure();
             const [topicId, categoryId] = selectedId.split(':');
             const topicData = treeStructure[topicId];

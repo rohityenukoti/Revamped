@@ -163,6 +163,30 @@
             font-weight: bold;
         }
         
+        /* Free Cases section styling */
+        .tree-item[data-id="FreeCases"] > .tree-item-header {
+            background-color: #90EE90; /* Light green background */
+            font-weight: bold;
+            font-size: 1.1em;
+            border: 3px solid #000;
+        }
+        
+        .tree-item[data-id="FreeCases"] > .tree-item-header:hover {
+            background-color: #7FDD7F; /* Slightly darker green on hover */
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0px #000;
+        }
+        
+        /* Free topic styling (topics under Free Cases) */
+        .tree-item[data-id^="FreeCases:"] > .tree-item-header {
+            background-color: #E8F5E8; /* Very light green */
+            border-left: 4px solid #90EE90;
+        }
+        
+        .tree-item[data-id^="FreeCases:"] > .tree-item-header:hover {
+            background-color: #D4F3D4;
+        }
+        
         .loading-icon {
             display: inline-block;
             width: 20px;
