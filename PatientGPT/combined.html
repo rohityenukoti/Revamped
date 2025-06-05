@@ -448,6 +448,7 @@
         flex: 1; /* Take up 1 part of the space */
         display: flex;
         justify-content: flex-start; /* Align to the left */
+        gap: 1em; /* Add spacing between BrainBank and Performance buttons */
     }
 
     .timer-center-container {
@@ -2112,6 +2113,10 @@
         <button id="openCaseSelectionButton" class="top-bar-button brain-bank-button">
             🧠<br>BrainBank
         </button>
+        <!-- Performance button (desktop) -->
+        <button id="openPerformanceButton" class="top-bar-button performance-button">
+            📊<br>Performance
+        </button>
     </div>
     
     <!-- Center: Timer -->
@@ -2139,11 +2144,8 @@
         </div>
     </div>
     
-    <!-- Right side: Performance and Dashboard buttons -->
+    <!-- Right side: Dashboard button -->
     <div class="right-buttons">
-        <button id="openPerformanceButton" class="top-bar-button performance-button">
-            📊<br>Performance
-        </button>
         <button id="dashboardButton" class="top-bar-button dashboard-button">
             🚪<br>Dashboard
         </button>
