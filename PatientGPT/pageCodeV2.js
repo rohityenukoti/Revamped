@@ -57,6 +57,13 @@ $w.onReady(async function () {
             case 'dashboardClicked':
                 wixLocationFrontend.to('https://www.turingmedschool.com/dashboard');
                 break;
+            case 'reviewCaseClicked':
+                if (selections.caseName) {
+                    wixLocationFrontend.to(`/osce-workbench?case=${encodeURIComponent(selections.caseName)}`);
+                } else {
+                    console.error("No case selected for review");
+                }
+                break;
         }
     });
     handleUrlParameters();

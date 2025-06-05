@@ -1160,6 +1160,10 @@
         background-color: #6c757d;  /* A neutral gray color */
     }
 
+    .review-case-button {
+        background-color: #9c27b0;  /* Purple color for review case */
+    }
+
     /* Add these new styles for mobile top bar */
     .hamburger-menu {
         display: none;  /* Hidden by default */
@@ -1567,6 +1571,26 @@
     }
 
     .dashboard-button.loading::after {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        top: 50%;
+        left: 50%;
+        margin: -8px 0 0 -8px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+        /* Add loading spinner styles for review case button */
+    .review-case-button.loading {
+        position: relative;
+        color: transparent !important;
+    }
+
+    .review-case-button.loading::after {
         content: "";
         position: absolute;
         width: 16px;
@@ -2102,6 +2126,9 @@
             <button id="openPerformanceButton-mobile" class="top-bar-button performance-button">
                 📊 Performance
             </button>
+            <button id="reviewCaseButton-mobile" class="top-bar-button review-case-button">
+                📖 Review Case
+            </button>
             <button id="dashboardButton-mobile" class="top-bar-button dashboard-button">
                 🚪 Dashboard
             </button>
@@ -2146,6 +2173,9 @@
     
     <!-- Right side: Dashboard button -->
     <div class="right-buttons">
+        <button id="reviewCaseButton" class="top-bar-button review-case-button">
+            📖<br>Review Case
+        </button>
         <button id="dashboardButton" class="top-bar-button dashboard-button">
             🚪<br>Dashboard
         </button>
@@ -4538,6 +4568,29 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         
         // Send message to parent
         window.parent.postMessage({ type: 'dashboardClicked' }, '*');
+    });
+
+    // Add event listener for the review case button
+    document.getElementById('reviewCaseButton').addEventListener('click', () => {
+        // Add loading state
+        const reviewCaseButton = document.getElementById('reviewCaseButton');
+        reviewCaseButton.classList.add('loading');
+        
+        // Send message to parent
+        window.parent.postMessage({ type: 'reviewCaseClicked' }, '*');
+    });
+
+    // Also update the mobile review case button
+    document.getElementById('reviewCaseButton-mobile').addEventListener('click', () => {
+        // Add loading state
+        const reviewCaseButtonMobile = document.getElementById('reviewCaseButton-mobile');
+        reviewCaseButtonMobile.classList.add('loading');
+        
+        // Close mobile menu
+        document.querySelector('.mobile-menu').classList.remove('active');
+        
+        // Send message to parent
+        window.parent.postMessage({ type: 'reviewCaseClicked' }, '*');
     });
 
     // Add feedback popup functionality
