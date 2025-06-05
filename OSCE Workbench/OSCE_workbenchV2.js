@@ -159,18 +159,21 @@ async function fetchFreeCasesStructure() {
     try {
         const results = await wixData.query("BrainBank")
             .eq("FreeCase", true)
+            .include("synonyms")
             .limit(1000)
             .find();
 
         const freeCasesStructure = {};
         results.items.forEach(item => {
-            const { topic, category, subCategory, caseName, caseUID } = item;
+            const { topic, category, subCategory, caseName, caseUID, synonyms } = item;
+
+            const caseItem = { caseName, caseUID, synonyms };
 
             if (isRedundantStructure(topic, category, subCategory)) {
                 if (!freeCasesStructure[topic]) {
                     freeCasesStructure[topic] = [];
                 }
-                freeCasesStructure[topic].push({ caseName, caseUID });
+                freeCasesStructure[topic].push(caseItem);
             } else if (category === subCategory) {
                 if (!freeCasesStructure[topic]) {
                     freeCasesStructure[topic] = {};
@@ -178,7 +181,7 @@ async function fetchFreeCasesStructure() {
                 if (!freeCasesStructure[topic][category]) {
                     freeCasesStructure[topic][category] = [];
                 }
-                freeCasesStructure[topic][category].push({ caseName, caseUID });
+                freeCasesStructure[topic][category].push(caseItem);
             } else {
                 if (!freeCasesStructure[topic]) {
                     freeCasesStructure[topic] = {};
@@ -189,7 +192,7 @@ async function fetchFreeCasesStructure() {
                 if (!freeCasesStructure[topic][category][subCategory]) {
                     freeCasesStructure[topic][category][subCategory] = [];
                 }
-                freeCasesStructure[topic][category][subCategory].push({ caseName, caseUID });
+                freeCasesStructure[topic][category][subCategory].push(caseItem);
             }
         });
 
@@ -388,18 +391,21 @@ function isRedundantStructure(topic, category, subCategory) {
 async function fetchTreeStructure() {
     try {
         const results = await wixData.query("BrainBank")
+            .include("synonyms")
             .limit(1000)
             .find();
 
         const treeStructure = {};
         results.items.forEach(item => {
-            const { topic, category, subCategory, caseName, caseUID } = item;
+            const { topic, category, subCategory, caseName, caseUID, synonyms } = item;
+
+            const caseItem = { caseName, caseUID, synonyms };
 
             if (isRedundantStructure(topic, category, subCategory)) {
                 if (!treeStructure[topic]) {
                     treeStructure[topic] = [];
                 }
-                treeStructure[topic].push({ caseName, caseUID });
+                treeStructure[topic].push(caseItem);
             } else if (category === subCategory) {
                 if (!treeStructure[topic]) {
                     treeStructure[topic] = {};
@@ -407,7 +413,7 @@ async function fetchTreeStructure() {
                 if (!treeStructure[topic][category]) {
                     treeStructure[topic][category] = [];
                 }
-                treeStructure[topic][category].push({ caseName, caseUID });
+                treeStructure[topic][category].push(caseItem);
             } else {
                 if (!treeStructure[topic]) {
                     treeStructure[topic] = {};
@@ -418,7 +424,7 @@ async function fetchTreeStructure() {
                 if (!treeStructure[topic][category][subCategory]) {
                     treeStructure[topic][category][subCategory] = [];
                 }
-                treeStructure[topic][category][subCategory].push({ caseName, caseUID });
+                treeStructure[topic][category][subCategory].push(caseItem);
             }
         });
 
@@ -460,7 +466,8 @@ function transformTopicDataForTreeView(topic, topicData) {
             name: camelCaseToSentence(caseItem.caseName),
             type: 'caseName',
             hasResponse: hasCaseResponse(caseItem.caseName),
-            caseUID: caseItem.caseUID
+            caseUID: caseItem.caseUID,
+            synonyms: caseItem.synonyms || []
         }));
     }
 
@@ -475,7 +482,8 @@ function transformTopicDataForTreeView(topic, topicData) {
                     name: camelCaseToSentence(caseItem.caseName),
                     type: 'caseName',
                     hasResponse: hasCaseResponse(caseItem.caseName),
-                    caseUID: caseItem.caseUID
+                    caseUID: caseItem.caseUID,
+                    synonyms: caseItem.synonyms || []
                 }))
             });
         } else {
@@ -496,7 +504,8 @@ function transformTopicDataForTreeView(topic, topicData) {
                         name: camelCaseToSentence(caseItem.caseName),
                         type: 'caseName',
                         hasResponse: hasCaseResponse(caseItem.caseName),
-                        caseUID: caseItem.caseUID
+                        caseUID: caseItem.caseUID,
+                        synonyms: caseItem.synonyms || []
                     }))
                 };
                 categoryItem.children.push(subCategoryItem);

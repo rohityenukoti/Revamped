@@ -757,6 +757,84 @@
             text-transform: uppercase;
         }
         
+        /* Add search bar styles */
+        .search-container {
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 3px solid #000;
+            border-radius: 0px;
+            font-size: 16px;
+            background-color: white;
+            box-shadow: 4px 4px 0px #000;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 0px #000;
+        }
+        
+        .search-input::placeholder {
+            color: #888;
+            font-style: italic;
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        .search-clear {
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #888;
+            display: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        
+        .search-clear:hover {
+            background-color: #f0f0f0;
+            color: #000;
+        }
+
+        /* Hide search bar in practice mode */
+        .mode-practice .search-container {
+            display: none;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            font-style: italic;
+            background-color: #f8f9fa;
+            border: 2px dashed #ccc;
+            border-radius: 0px;
+            margin: 20px;
+        }
+        
+        .highlight {
+            background-color: #ffde59;
+            padding: 0 2px;
+            font-weight: bold;
+            border-radius: 2px;
+        }
+        
         #lightbox-treeView {
             flex: 1;
             overflow-y: auto;
@@ -2447,6 +2525,11 @@
             <div id="lightbox-loading">
                 <div class="spinner"></div>
             </div>
+            <!-- Add search bar -->
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Search for cases..." autocomplete="off">
+                <button id="search-clear" class="search-clear">&times;</button>
+            </div>
             <div id="lightbox-treeView" class="tree-view"></div>
         </div>
     </div>
@@ -2756,15 +2839,74 @@
             }
         });
         
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const searchClear = document.getElementById('search-clear');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value;
+                
+                // Show/hide clear button
+                if (searchTerm.length > 0) {
+                    searchClear.style.display = 'block';
+                } else {
+                    searchClear.style.display = 'none';
+                }
+                
+                // Perform search
+                if (state.treeView) {
+                    state.treeView.search(searchTerm);
+                }
+            });
+            
+            // Clear search when X is clicked
+            searchClear.addEventListener('click', () => {
+                searchInput.value = '';
+                searchClear.style.display = 'none';
+                if (state.treeView) {
+                    state.treeView.search('');
+                }
+                searchInput.focus();
+            });
+            
+            // Clear search on Escape key
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    searchClear.style.display = 'none';
+                    if (state.treeView) {
+                        state.treeView.search('');
+                    }
+                }
+            });
+        }
+        
         // Close lightbox
         document.getElementById('lightbox-close').addEventListener('click', () => {
             document.getElementById('lightbox').style.display = 'none';
+            // Clear search when closing lightbox
+            if (searchInput) {
+                searchInput.value = '';
+                searchClear.style.display = 'none';
+                if (state.treeView) {
+                    state.treeView.search('');
+                }
+            }
         });
         
         // Also close lightbox when clicking outside content area
         document.getElementById('lightbox').addEventListener('click', (e) => {
             if (e.target === document.getElementById('lightbox')) {
                 document.getElementById('lightbox').style.display = 'none';
+                // Clear search when closing lightbox
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchClear.style.display = 'none';
+                    if (state.treeView) {
+                        state.treeView.search('');
+                    }
+                }
             }
         });
     });
@@ -3900,8 +4042,10 @@
         constructor(element) {
             this.element = element;
             this.data = null;
+            this.originalData = null; // Store original unfiltered data
             this.mode = 'review'; // Default mode
             this.selectedIds = []; // Track selected items by their ids
+            this.searchTerm = ''; // Track current search term
             
             // Show loading state initially
             document.getElementById('lightbox-loading').style.display = 'flex';
@@ -3909,10 +4053,62 @@
 
         setData(data) {
             // Add open: false to all items in the tree
-            this.data = this.addOpenStateToItems(data);
+            this.originalData = this.addOpenStateToItems(data);
+            this.data = this.originalData;
             this.render();
             // Hide loading state after data is set
             document.getElementById('lightbox-loading').style.display = 'none';
+        }
+
+        // Add search functionality
+        search(term) {
+            this.searchTerm = term.toLowerCase().trim();
+            
+            if (this.searchTerm === '') {
+                // If search is empty, show all data
+                this.data = this.originalData;
+            } else {
+                // Filter data to show only matching cases and their parent topics
+                this.data = this.filterData(this.originalData, this.searchTerm);
+            }
+            
+            this.render();
+        }
+
+        filterData(items, searchTerm) {
+            if (!Array.isArray(items)) return items;
+            
+            const filteredItems = [];
+            
+            items.forEach(item => {
+                if (item.type === 'caseName') {
+                    // Check if case name matches search term
+                    const caseName = this.mode === 'practice' ? this.maskCaseName(item) : item.name;
+                    const nameMatches = caseName.toLowerCase().includes(searchTerm);
+                    
+                    // Check if any synonyms match the search term
+                    const hasSynonyms = item.synonyms && Array.isArray(item.synonyms);
+                    const synonymMatches = hasSynonyms ? 
+                        item.synonyms.some(syn => syn.toLowerCase().includes(searchTerm)) : 
+                        false;
+                    
+                    if (nameMatches || synonymMatches) {
+                        filteredItems.push({ ...item });
+                    }
+                } else if (item.children) {
+                    // For topics, check if any children match
+                    const filteredChildren = this.filterData(item.children, searchTerm);
+                    if (filteredChildren.length > 0) {
+                        filteredItems.push({
+                            ...item,
+                            children: filteredChildren,
+                            open: true // Auto-expand topics that contain matches
+                        });
+                    }
+                }
+            });
+            
+            return filteredItems;
         }
 
         addOpenStateToItems(items) {
@@ -3994,8 +4190,19 @@
         }
 
         render() {
+            if (!this.data || this.data.length === 0) {
+                if (this.searchTerm) {
+                    // Show no results message when search returns empty
+                    this.element.innerHTML = '<div class="no-results">No cases found matching "' + this.searchTerm + '"</div>';
+                } else {
+                    this.element.innerHTML = '<div class="no-results">Loading...</div>';
+                }
+                return;
+            }
+            
             this.element.innerHTML = this.renderTree(this.data);
             this.addEventListeners();
+            this.addSearchHighlighting();
         }
 
         renderTree(items) {
@@ -4043,6 +4250,69 @@
                     ` : ''}
                 </div>
             `;
+        }
+
+        // Add method to handle search highlighting and synonym indicators
+        addSearchHighlighting() {
+            if (!this.searchTerm) return;
+            
+            const caseItems = this.element.querySelectorAll('.case-item');
+            
+            caseItems.forEach(item => {
+                const caseId = item.dataset.id;
+                const caseData = this.findCaseDataById(this.originalData, caseId);
+                
+                if (!caseData) return;
+                
+                const caseName = this.mode === 'practice' ? this.maskCaseName(caseData) : caseData.name;
+                const nameMatches = caseName.toLowerCase().includes(this.searchTerm);
+                const hasSynonyms = caseData.synonyms && Array.isArray(caseData.synonyms);
+                const synonymMatches = hasSynonyms ? 
+                    caseData.synonyms.some(syn => syn.toLowerCase().includes(this.searchTerm)) : 
+                    false;
+                
+                const span = item.querySelector('span');
+                if (!span) return;
+                
+                // Highlight matching text in case name if it matches
+                if (nameMatches) {
+                    const regex = new RegExp(`(${this.searchTerm})`, 'gi');
+                    const originalText = span.textContent;
+                    span.innerHTML = originalText.replace(regex, '<span class="highlight">$1</span>');
+                }
+                
+                // Add synonym indicator if matched by synonym but not by name
+                if (synonymMatches && !nameMatches && hasSynonyms) {
+                    // Find the matching synonyms to display
+                    const matchingSynonyms = caseData.synonyms
+                        .filter(syn => syn.toLowerCase().includes(this.searchTerm))
+                        .join(', ');
+                    
+                    // Add a small indicator that this was matched by synonym
+                    const indicator = document.createElement('small');
+                    indicator.style.marginLeft = '5px';
+                    indicator.style.opacity = '0.7';
+                    indicator.style.fontStyle = 'italic';
+                    indicator.innerHTML = ` (matches: ${matchingSynonyms})`;
+                    item.appendChild(indicator);
+                }
+            });
+        }
+
+        // Add method to find case data by ID in original data
+        findCaseDataById(items, id) {
+            if (!items) return null;
+            
+            for (let item of items) {
+                if (item.id === id) {
+                    return item;
+                }
+                if (item.children) {
+                    const found = this.findCaseDataById(item.children, id);
+                    if (found) return found;
+                }
+            }
+            return null;
         }
 
         maskCaseName(item) {
