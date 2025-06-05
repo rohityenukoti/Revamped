@@ -2253,9 +2253,16 @@
                         <div id="chatHistory" style="width: 100%; height: 90%; font-size: medium; background-color: transparent; overflow-y: auto;" hidden></div>
                     </div>
                     <div id="localVideo">
+                        <!-- Female Videos (existing) -->
                         <video id="idleVideo" src="https://video.wixstatic.com/video/38c04a_f891c30ad2424bf58ac8b7419a40fdca/1080p/mp4/file.mp4"
                                 autoplay loop muted playsinline></video>
                         <video id="talkingVideo" src="https://video.wixstatic.com/video/38c04a_95bcd277c8e8485b99710c1c55a3576d/1080p/mp4/file.mp4" 
+                                autoplay loop muted playsinline hidden></video>
+                        
+                        <!-- Male Videos (new) -->
+                        <video id="idleVideoMale" src="https://video.wixstatic.com/video/38c04a_fa086fef08cf44b695c26c6383f8a44f/720p/mp4/file.mp4"
+                                autoplay loop muted playsinline hidden></video>
+                        <video id="talkingVideoMale" src="https://video.wixstatic.com/video/38c04a_0350888ae9904e0c8caceb11e6350894/720p/mp4/file.mp4" 
                                 autoplay loop muted playsinline hidden></video>
                     </div>
                 </div>
@@ -2408,7 +2415,8 @@
     // Default configuration for speech and synthesis
     const DEFAULT_CONFIG = {
       sttLocales: 'en-US',
-      ttsVoice: 'en-GB-BellaNeural',
+      ttsVoice: 'en-GB-BellaNeural', // Default female voice
+      ttsVoiceMale: 'en-GB-RyanNeural', // Male voice
       openAIDeploymentName: 'gpt-4o2'
     };
 
@@ -2417,6 +2425,14 @@
 
     // Add this variable at the top level of your script section
     let currentChecklist = null;
+    
+    // Add this variable to track the current simulator gender
+    let currentSimulatorGender = 'Female'; // Default to Female
+
+    // Helper function to get appropriate TTS voice based on gender
+    function getTTSVoice() {
+        return currentSimulatorGender === 'Male' ? DEFAULT_CONFIG.ttsVoiceMale : DEFAULT_CONFIG.ttsVoice;
+    }
 
     /* -----------------------------------------
        Event Listener for Incoming Messages 
@@ -2461,6 +2477,9 @@
         showPerformanceLightbox(data.autoSelectLatest);
       } else if (data.type === 'showAccessDeniedMessage') {
         showAccessDeniedNotification(data.message);
+      } else if (data.type === 'setSimulatorGender') {
+        currentSimulatorGender = data.gender;
+        setActiveVideos(data.gender);
       }
     }, false);
 
@@ -2827,14 +2846,15 @@
                 return;
             }
 
-            // Get video elements
-            const idleVideo = document.getElementById('idleVideo');
-            const talkingVideo = document.getElementById('talkingVideo');
+            // Get video elements based on current gender
+            const videos = getCurrentVideoElements();
+            const idleVideo = videos.idle;
+            const talkingVideo = videos.talking;
 
             // Reset talking video but don't play it yet
             talkingVideo.currentTime = 0;
             
-            const ttsVoice = DEFAULT_CONFIG.ttsVoice;
+            const ttsVoice = getTTSVoice();
             const ssml = `
                 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
                     <voice name="${ttsVoice}">
@@ -4695,6 +4715,37 @@ Please fill in the "Status" field for each checklist item based on the chat hist
         }, 3000);
     }
 
+    // Set active videos based on gender
+    function setActiveVideos(gender) {
+        // Hide all videos first
+        document.getElementById('idleVideo').hidden = true;
+        document.getElementById('talkingVideo').hidden = true;
+        document.getElementById('idleVideoMale').hidden = true;
+        document.getElementById('talkingVideoMale').hidden = true;
+        
+        // Show the appropriate idle video based on gender
+        if (gender === 'Male') {
+            document.getElementById('idleVideoMale').hidden = false;
+        } else {
+            // Default to female
+            document.getElementById('idleVideo').hidden = false;
+        }
+    }
+
+    // Helper function to get current video elements based on gender
+    function getCurrentVideoElements() {
+        if (currentSimulatorGender === 'Male') {
+            return {
+                idle: document.getElementById('idleVideoMale'),
+                talking: document.getElementById('talkingVideoMale')
+            };
+        } else {
+            return {
+                idle: document.getElementById('idleVideo'),
+                talking: document.getElementById('talkingVideo')
+            };
+        }
+    }
   </script>
 </body>
 </html> 

@@ -327,7 +327,7 @@ async function loadCaseData(caseName) {
         
         const results = await wixData.query("BrainBank")
             .eq("caseName", caseName)
-            .include("topic", "candidateInfo", "findingsImage", "findingsText", "checklist", "FreeCase")
+            .include("topic", "candidateInfo", "findingsImage", "findingsText", "checklist", "FreeCase", "simulatorGender")
             .find();
         
         if (results.items.length > 0) {
@@ -353,6 +353,14 @@ async function loadCaseData(caseName) {
 
                 // Send the updated case data to the HTML component
                 $combinedWidget.postMessage({ type: 'updateCaseInformation', caseData });
+                
+                // Send simulator gender information to set the appropriate videos
+                const simulatorGender = caseData.simulatorGender || 'Female'; // Default to Female if not specified
+                $combinedWidget.postMessage({ 
+                    type: 'setSimulatorGender', 
+                    gender: simulatorGender 
+                });
+                
                 updateUrl(caseName);
 
                 // Add this section to explicitly send patient info
